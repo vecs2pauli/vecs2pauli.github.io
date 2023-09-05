@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {margin:0;}
+
+.main {
+  padding: 16px;
+  height: 800px;
+  margin-top: 30px;
+}
+
+.title {
+  color: rgb(80,80,80);
+}
+
+</style>
+</head>
+<body>
+
+<div class="main">
+
+<h1>Vecs2Pauli (work in progress)</h1>
+
+Vecs2Pauli is software which finds all Pauli stabilizers of a given quantum state. More generally, it finds all Pauli operators which map one given quantum state (given as vector) to another.
+
+<br>
+<br>
+
+The software is work in progress and we hope to update this website soon.
+
+<br>
+<br>
+
+The project is funded by the Leiden University Fund (<a href="https://www.luf.nl/en/news/2022/project-grants-awarded-in-autumn-2022">LUF news</a>).
+
+<div class="title">
+  <h2>Some use cases</h2>
+</div>
+    
+<ul>
+	<li> <b>fast classical simulation of quantum circuits</b>: converting from the slow vector-based simulation to the fast stabilizer-based simulation, if possible</li>
+	<li> <b>educating quantum error correction</b>: students can create quantum error-correction codes in the state-vector picture instead of the less beginner-friendly stabilizer-picture.
+		Specifically, they can start by defining the logical states as vectors, and subsequently use Vecs2Pauli to ...
+		<ul>
+			<li>
+				 ...find the stabilizers of the code space (the usual representation of a code) 
+			</li>
+			<li>
+				 ...find errors which the code cannot correct, i.e. Pauli strings which map one vector in the span to another
+			</li>
+		</ul>
+	</li>
+</ul>
+
+<div class="title">
+  <h2>Algorithm</h2>
+</div>
+
+The underlying algorithm of Vecs2Pauli is based on our earlier work on <a href="https://arxiv.org/abs/2108.00931">a new data structure for simulation of quantum computing</a>, combining decision diagrams and the stabilizer formalism (accepted to the journal <a href="quantum-journal.org">Quantum</a>).
+
+<div class="title">
+  <h2>Contributors</h2>
+</div>
+
+Lieke Vertegaal, Tim Coopmans.
+
+
+
+</body>
+</html>
+
+
