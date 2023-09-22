@@ -1,43 +1,181 @@
 <!DOCTYPE html>
 <html>
-<head>
-<style>
-body {margin:0;}
-
-.main {
-  padding: 16px;
-  height: 800px;
-  margin-top: 30px;
-}
-
-.title {
-  color: rgb(80,80,80);
-}
-
-</style>
-</head>
-<body>
-
-<div class="main">
+    <head>
+	
+        <link rel="stylesheet" href="styles.css">
+        <style>
+            body {
+              font-family: arial;
+	      font-size: 12pt;
+	      margin: auto;
+              padding: none;
+	      max-width: 100ch;
+            }
+      
+            .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+            div.emscripten { text-align: center; }      
+            div.emscripten_border { border: 1px solid black; }
+            /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+            canvas.emscripten { border: 0px none; background-color: black; }
+      
+            #emscripten_logo {
+              display: inline-block;
+              margin: 0;
+            }
+      
+            .spinner {
+              height: 30px;
+              width: 30px;
+              margin: 0;
+              margin-top: 20px;
+              margin-left: 20px;
+              display: inline-block;
+              vertical-align: top;
+      
+              -webkit-animation: rotation .8s linear infinite;
+              -moz-animation: rotation .8s linear infinite;
+              -o-animation: rotation .8s linear infinite;
+              animation: rotation 0.8s linear infinite;
+      
+              border-left: 5px solid rgb(235, 235, 235);
+              border-right: 5px solid rgb(235, 235, 235);
+              border-bottom: 5px solid rgb(235, 235, 235);
+              border-top: 5px solid rgb(120, 120, 120);
+              
+              border-radius: 100%;
+              background-color: rgb(189, 215, 46);
+            }
+      
+            @-webkit-keyframes rotation {
+              from {-webkit-transform: rotate(0deg);}
+              to {-webkit-transform: rotate(360deg);}
+            }
+            @-moz-keyframes rotation {
+              from {-moz-transform: rotate(0deg);}
+              to {-moz-transform: rotate(360deg);}
+            }
+            @-o-keyframes rotation {
+              from {-o-transform: rotate(0deg);}
+              to {-o-transform: rotate(360deg);}
+            }
+            @keyframes rotation {
+              from {transform: rotate(0deg);}
+              to {transform: rotate(360deg);}
+            }
+      
+            #status {
+              display: inline-block;
+              vertical-align: top;
+              margin-top: 30px;
+              margin-left: 20px;
+              font-weight: bold;
+              color: rgb(120, 120, 120);
+            }
+      
+            #progress {
+              height: 20px;
+              width: 300px;
+            }
+      
+            #controls {
+              display: inline-block;
+              /* float: right; */
+              vertical-align: top;
+              margin-top: 30px;
+              margin-right: 20px;
+            }
+      
+            #output {
+              width: 50%;
+              height: 200px;
+              margin: 0 auto;
+              margin-top: 10px;
+              border-left: 0px;
+              border-right: 0px;
+              padding-left: 0px;
+              padding-right: 0px;
+              display: block;
+              background-color: black;
+              color: white;
+              font-family: 'Lucida Console', Monaco, monospace;
+              outline: none;
+              text-align: center;
+            }
+          </style>
+    </head>
+    <body>
+        <nav class="menu" id="nav">
+            <span class="nav-item active">
+                <a href="/">Home</a>
+            </span>
+            <span class="nav-item">
+                <a href="calculator.html">Calculator</a>
+            </span>
+            <span class="nav-item">
+                <a href="examples.html">Examples</a>
+            </span>
+            <span class="nav-item">
+                <a href="algorithm.html">Algorithm</a>
+            </span>
+        </nav>
 
 <h1>Vecs2Pauli (work in progress)</h1>
+ 
+Vecs2Pauli is software which finds all Pauli stabilizers of a given quantum state, where the quantum state is given as a vector. More generally, it finds all Pauli operators (strings of Pauli matrices) which map one given quantum state  to another.
+<br>
+<br>
 
-Vecs2Pauli is software which finds all Pauli stabilizers of a given quantum state. More generally, it finds all Pauli operators which map one given quantum state (given as vector) to another.
+Vecs2Pauli is currently in its final stage of development as a Python/C++ library, but the beta version of the <a href="calculator.html">website interface is already available</a>.
+As soon as the Python/C++ library will be available, this website will be updated.
 
 <br>
 <br>
 
-The software is work in progress and we hope to update this website soon.
+<b>Contributors:</b> Lieke Vertegaal (main researcher), Lieuwe Vinkhuijzen, Alfons Laarman, <a href="https://www.universiteitleiden.nl/en/staffmembers/tim-coopmans">Tim Coopmans</a> (project lead and point of contact).
 
 <br>
 <br>
 
 The project is funded by the Leiden University Fund (<a href="https://www.luf.nl/en/news/2022/project-grants-awarded-in-autumn-2022">LUF news</a>).
 
+
 <div class="title">
-  <h2>Some use cases</h2>
+  <h2>High-level explanation</h2>
 </div>
-    
+
+A quantum bit or <a href="https://en.wikipedia.org/wiki/Qubit">qubit</a> is the unit of computation of a <a href="https://en.wikipedia.org/wiki/Quantum_computer">quantum computer</a>.
+The state of a set of quantum bits is represented by a vector (a list) of <a href="https://en.wikipedia.org/wiki/Complex_numbers">complex numbers</a>.
+Most quantum-computing education starts by giving such vectors <i>explicitly</i>: students work out how the vector changes as the quantum computer runs its computation.
+
+<br>
+<br>
+
+However, for analysing a quantum computation, a quantum state is often instead described <i>implicitly</i>. That is, without writing down this vector explicitly. 
+The reason for this is that the vector is exponentially long in the number of qubits, so it becomes infeasible to write the vector down explicitly, either on paper or in computer code.
+
+<br>
+<br>
+
+A very common type of implicit description is a small set of Pauli matrices, a type of matrix that has a short description (much shorter than the vector).
+This is called the (Pauli) stabiliser formalism, which forms the basis of <a href="https://en.wikipedia.org/wiki/Stabilizer_code">techniques for correcting errors in quantum computers</a> as well as <a href="https://en.wikipedia.org/wiki/Gottesman%E2%80%93Knill_theorem">fast simulation of a useful type of quantum circuit</a> on a regular computer.
+
+<br>
+<br>
+
+For students and beginning quantum computer researchers, thinking and calculating with this implicit description is arguably much harder than with explicit vectors.
+Vecs2Pauli helps by converting between the explicit description (vectors) and implicit description (Pauli matrices) of quantum states.
+The conversion from vector to stabilisers is based on a <a href="algorithm.html">novel algorithm</a>.
+
+<br>
+<br>
+
+We state more detailed use cases of Vecs2Pauli below.
+
+
+<div class="title">
+  <h2>Some use cases (list to be updated)</h2>
+</div>
+
 <ul>
 	<li> <b>fast classical simulation of quantum circuits</b>: converting from the slow vector-based simulation to the fast stabilizer-based simulation, if possible</li>
 	<li> <b>educating quantum error correction</b>: students can create quantum error-correction codes in the state-vector picture instead of the less beginner-friendly stabilizer-picture.
@@ -49,25 +187,16 @@ The project is funded by the Leiden University Fund (<a href="https://www.luf.nl
 			<li>
 				 ...find errors which the code cannot correct, i.e. Pauli strings which map one vector in the span to another
 			</li>
+
 		</ul>
+	</li>
+	<li> <b>testing hypotheses</b> on quantum states for only a few qubits
+	</li>
+	<li> (more to be added)
 	</li>
 </ul>
 
-<div class="title">
-  <h2>Algorithm</h2>
-</div>
-
-The underlying algorithm of Vecs2Pauli is based on our earlier work on <a href="https://arxiv.org/abs/2108.00931">a new data structure for simulation of quantum computing</a>, combining decision diagrams and the stabilizer formalism (accepted to the journal <a href="quantum-journal.org">Quantum</a>).
-
-<div class="title">
-  <h2>Contributors</h2>
-</div>
-
-Lieke Vertegaal, Tim Coopmans.
-
-
 
 </body>
+
 </html>
-
-

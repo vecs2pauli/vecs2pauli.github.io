@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="styles.css">
+        <style>
+            body {
+              font-family: arial;
+	      font-size: 12pt;
+	      margin: auto;
+              padding: none;
+	      max-width: 100ch;
+            }
+      
+            .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+            div.emscripten { text-align: center; }      
+            div.emscripten_border { border: 1px solid black; }
+            /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+            canvas.emscripten { border: 0px none; background-color: black; }
+      
+            #emscripten_logo {
+              display: inline-block;
+              margin: 0;
+            }
+      
+            .spinner {
+              height: 30px;
+              width: 30px;
+              margin: 0;
+              margin-top: 20px;
+              margin-left: 20px;
+              display: inline-block;
+              vertical-align: top;
+      
+              -webkit-animation: rotation .8s linear infinite;
+              -moz-animation: rotation .8s linear infinite;
+              -o-animation: rotation .8s linear infinite;
+              animation: rotation 0.8s linear infinite;
+      
+              border-left: 5px solid rgb(235, 235, 235);
+              border-right: 5px solid rgb(235, 235, 235);
+              border-bottom: 5px solid rgb(235, 235, 235);
+              border-top: 5px solid rgb(120, 120, 120);
+              
+              border-radius: 100%;
+              background-color: rgb(189, 215, 46);
+            }
+      
+            @-webkit-keyframes rotation {
+              from {-webkit-transform: rotate(0deg);}
+              to {-webkit-transform: rotate(360deg);}
+            }
+            @-moz-keyframes rotation {
+              from {-moz-transform: rotate(0deg);}
+              to {-moz-transform: rotate(360deg);}
+            }
+            @-o-keyframes rotation {
+              from {-o-transform: rotate(0deg);}
+              to {-o-transform: rotate(360deg);}
+            }
+            @keyframes rotation {
+              from {transform: rotate(0deg);}
+              to {transform: rotate(360deg);}
+            }
+      
+            #status {
+              display: inline-block;
+              vertical-align: top;
+              margin-top: 30px;
+              margin-left: 20px;
+              font-weight: bold;
+              color: rgb(120, 120, 120);
+            }
+      
+            #progress {
+              height: 20px;
+              width: 300px;
+            }
+      
+            #controls {
+              display: inline-block;
+              /* float: right; */
+              vertical-align: top;
+              margin-top: 30px;
+              margin-right: 20px;
+            }
+      
+            #output {
+              width: 50%;
+              height: 50px;
+              margin: 0 auto;
+              margin-top: 5px;
+              border-left: 0px;
+              border-right: 0px;
+              padding-left: 0px;
+              padding-right: 0px;
+              display: block;
+              background-color: black;
+              color: white;
+              font-family: 'Lucida Console', Monaco, monospace;
+              outline: none;
+              text-align: center;
+            }
+          </style>
+    </head>
+    <body>
+        <nav class="menu" id="nav">
+            <span class="nav-item">
+                <a href="/">Home</a>
+            </span>
+            <span class="nav-item active">
+                <a href="calculator.html">Calculator</a>
+            </span>
+            <span class="nav-item">
+                <a href="examples.html">Examples</a>
+            </span>
+            <span class="nav-item">
+                <a href="algorithm.html">Algorithm</a>
+            </span>
+        </nav>
+
+        <div style="text-align: left;">
+            <h2>Vecs2Pauli</h2>
+ Use the interface below to solve the following task:
+ <br>
+ <br>
+	    <b>Task:</b> find all matrices of the form <MATH>&alpha; &#183; P <sub>1</sub> &#8855; P<sub>2</sub> ...  &#8855; P<sub>n</sub> </MATH> which map one given vector <MATH>s&#8407;</MATH> to another vector <MATH>t&#8407;</MATH>, where
+	    <ul>
+		    <li>
+			    <MATH>n</MATH> is the number of qubits
+		    </li>
+		    <li>
+			    <MATH>s&#8407;</MATH> are <MATH>t&#8407;</MATH> are complex vectors of length <MATH>2<sup>n</sup></MATH>
+		    </li>
+		    <li>
+			    <MATH>&alpha;</MATH> a complex number
+		    </li>
+		    <li> each <MATH>P<sub>j</sub></MATH> for <MATH>j=1,2,...,n</MATH> is a single-qubit Pauli matrix:
+		    </li>
+<script src=
+"http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
+</script>
+\[
+\text{I} = \begin{bmatrix}
+1  & 0\\
+0 & 1
+\end{bmatrix}
+,
+\qquad
+\text{X} = \begin{bmatrix}
+0  & 1\\
+1 & 0
+\end{bmatrix}
+,
+\qquad
+\text{Y} = \begin{bmatrix}
+0  & -\mathrm{i}\\
+\mathrm{i} & 0
+\end{bmatrix}
+,
+\qquad
+\text{Z} = \begin{bmatrix}
+1  & 0\\
+0 &-1 
+\end{bmatrix}
+.
+\]
+	    </ul>
+By setting <MATH>t&#8407;</MATH> equal to <MATH>s&#8407;</MATH>, the solution to the task are precisely the (Pauli) stabilisers of <MATH>s&#8407;</MATH>.
+<br>
+<br>
+<b>Example 1:</b> take as source state the state <MATH>0.71|0&rangle; + 0.71|1&rangle;</MATH>, which is written in the computational basis as vector <MATH>s&#8407; = (0.71, 0.71)</MATH>. Target as target state the same state: <MATH>t&#8407; = (0.71, 0.71)</MATH>. Then Vecs2Pauli finds all Pauli operators which map <MATH>s&#8407;</MATH> to itself, i.e. it finds the stabilisers of <MATH>s&#8407;</MATH>.
+These stabilisers are <MATH>I</MATH> and <MATH>X</MATH>, which can be written as
+<MATH>X</MATH> to the power zero and <MATH>X</MATH> to the power one. Hence, <MATH>X</MATH> is a generator for the group of stabilisers.
+<br>
+<br>
+<b>Example 2:</b> take as source state the (unnormalised) Bell state <MATH>s&#8407; = (1, 0, 0, 1)</MATH> and as target state the other Bell state state <MATH>t&#8407; = (0, 1, -1, 0)</MATH>. 
+Then <MATH>s&#8407;</MATH> is mapped to <MATH>t&#8407;</MATH> by precisely all Pauli operators which can be written as <MATH>-i &#183; Y &#8855; I</MATH> times <MATH> g</MATH>, 
+where <MATH> g</MATH> is any operator that can be written as a multiplication of <MATH>X &#8855; X</MATH> and <MATH>Z &#8855; Z</MATH> (the stabilisers of <MATH>s&#8407;</MATH>).
+
+
+<br>
+<br>
+<hr>
+<br>
+            Choose a number of qubits: <input type="number" id="numqubits" style="width: 50px;" value="1">    <a href="#" id="filldetails" onclick="changeFields()">Update</a>
+            <br><br>
+        </div>
+        <div id="container">
+            <div style="width: 250px; display: inline-block;">
+		    Pick a format for source vector <MATH>s&#8407;</MATH>: <br>
+                <input type="radio" id="leftcolumn" name="leftformat" value="column" checked="checked" onchange="changeFormatLeft()">
+                    <label for="leftcolumn">column</label><br>
+                <input type="radio" id="leftcsv" name="leftformat" value="csv" onchange="changeFormatLeft()">
+                    <label for="leftcsv">csv</label><br>
+            </div>
+            <div style="width: 200px; display: inline-block; text-align:center; align-items: center;" id="container1">
+                <input type="number" id="leftvecnum0" style="width: 50px;" value="0.71"> + <input type="number" id="leftvecnumi0" style="width: 50px;" value="0"> i <br>
+                <input type="number" id="leftvecnum1" style="width: 50px;" value="-0.71"> + <input type="number" id="leftvecnumi1" style="width: 50px;" value="0"> i
+            </div>
+            <div style="width: 200px; display: inline-block; text-align: center;" id="container2">
+                <input type="number" id="rightvecnum0" style="width: 50px;" value="0.71"> + <input type="number" id="rightvecnumi0" style="width: 50px;" value="0"> i <br>
+                <input type="number" id="rightvecnum1" style="width: 50px;" value="0.71"> + <input type="number" id="rightvecnumi1" style="width: 50px;" value="0"> i
+            </div>
+            <div style="width: 250px; display: inline-block; align-self:flex-start;">
+                Pick a format for the target vector <MATH>t&#8407;</MATH>: <br>
+                <input type="radio" id="rightcolumn" name="rightformat" value="column" checked="checked" onchange="changeFormatRight()">
+                    <label for="rightcolumn">column</label><br>
+                <input type="radio" id="rightcsv" name="rightformat" value="csv" onchange="changeFormatRight()">
+                    <label for="rightcsv">csv</label><br>
+            </div>
+        </div>
+        <br><br>
+	<div style="text-align: center;"><button id="mybutton" onclick="runVecs2Pauli()">Click here to find all Pauli transformations from quantum state <MATH>s&#8407;</MATH> to <MATH>t&#8407;</MATH></button></div>
+
+        <textarea id="output" rows="2"></textarea>
+
+	Explanation of how the output is displayed: the set of the transformations mapping <MATH>s&#8407;</MATH> to <MATH>t&#8407;</MATH> is written as <MATH>(&alpha;, &pi;, {g<sub>1</sub>, ..., g<sub>k</sub>})</MATH>, meaning the set <MATH> {&alpha;&#183; &pi;&#183;g | g</MATH> can be written as product of any subset of the <MATH>g<sub>1</sub>,..,g<sub>k</sub> }</MATH>.
+	If <MATH>s&#8407; = t&#8407;</MATH>, then the <MATH>g<sub>1</sub>,..,g<sub>k</sub></MATH> are generators of the stabiliser group of  <MATH>s&#8407;</MATH>.
+
+    <script src="website2.js"></script>
+    <script>
+        Module['onRuntimeInitialized'] = () => { }
+        
+        const memory = new WebAssembly.Memory({
+        initial: 1,
+        maximum: 100,
+      });
+      function print(text){
+        var element = document.getElementById('output');
+          if (element) element.value = ''; // clear browser cache
+            if (element) {
+              element.value += "\n" + text + "\n";
+              element.scrollTop = element.scrollHeight; // focus on bottom
+            }
+          
+      }
+      const input = new Float64Array(memory.buffer);
+      function runVecs2Pauli(){
+        if ((document.getElementById("leftcolumn")).checked && (document.getElementById("rightcolumn")).checked){
+            runNormalFormat();
+        }
+        if ((document.getElementById("leftcsv")).checked && (document.getElementById("rightcolumn")).checked){
+            runLeftCsvFormat();
+        }
+        if ((document.getElementById("leftcolumn")).checked && (document.getElementById("rightcsv")).checked){
+            runRightCsvFormat();
+        }
+        if ((document.getElementById("leftcsv")).checked && (document.getElementById("rightcsv")).checked){
+            runCsvFormat();
+        }
+      }
+      function runNormalFormat(){
+        var number = document.getElementById("numqubits").value;
+        var howMany = calcPowerOf2(number);
+        for (i=0;i<howMany;i++){
+            input[i*2] = parseFloat(document.getElementById("leftvecnum" + i).value);
+            input[i*2 + 1] = parseFloat(document.getElementById("leftvecnumi" + i).value);
+        }
+        for (i=0;i<howMany;i++){
+            input[2*howMany + i*2] = parseFloat(document.getElementById("rightvecnum" + i).value);
+            input[2*howMany + i*2 + 1] = parseFloat(document.getElementById("rightvecnumi" + i).value);
+        }
+        var shortinput = input.slice(0,4*howMany)
+        var heapSpace = Module._malloc(shortinput.length * shortinput.BYTES_PER_ELEMENT);
+        Module.HEAPF64.set(shortinput, heapSpace>>3); // double has 8 bytes
+        print(Module.normalFormat(heapSpace, shortinput.length));
+      };
+      function runLeftCsvFormat(){
+        var number = document.getElementById("numqubits").value;
+        var howMany = calcPowerOf2(number);
+        for (i=0;i<howMany;i++){
+            input[i*2] = parseFloat(document.getElementById("rightvecnum" + i).value);
+            input[i*2 + 1] = parseFloat(document.getElementById("rightvecnumi" + i).value);
+        }
+        var shortinput = input.slice(0,2*howMany)
+        var heapSpace = Module._malloc(shortinput.length * shortinput.BYTES_PER_ELEMENT);
+        Module.HEAPF64.set(shortinput, heapSpace>>3); // double has 8 bytes
+        print(Module.leftCsvFormat(heapSpace, shortinput.length, (document.getElementById("leftveccsv").value)));
+      };
+      function runRightCsvFormat(){
+        var number = document.getElementById("numqubits").value;
+        var howMany = calcPowerOf2(number);
+        for (i=0;i<howMany;i++){
+            input[i*2] = parseFloat(document.getElementById("leftvecnum" + i).value);
+            input[i*2 + 1] = parseFloat(document.getElementById("leftvecnumi" + i).value);
+        }
+        var shortinput = input.slice(0,2*howMany)
+        var heapSpace = Module._malloc(shortinput.length * shortinput.BYTES_PER_ELEMENT);
+        Module.HEAPF64.set(shortinput, heapSpace>>3); // double has 8 bytes
+        print(Module.rightCsvFormat(heapSpace, shortinput.length, (document.getElementById("rightveccsv").value)));
+      };
+      function runCsvFormat(){
+        print(Module.csvFormat((document.getElementById("leftveccsv").value), (document.getElementById("rightveccsv").value)));
+      };
+      function calcPowerOf2(x){
+        var helper = 1;
+        for (i=0;i<x;i++){
+            helper = helper*2;
+        }
+        return helper;
+      }
+      function changeFormatLeft(){
+        var container = document.getElementById("container1");
+        while (container.hasChildNodes()) {
+            container.removeChild(container.lastChild);
+        }
+        if ((document.getElementById("leftcolumn")).checked){
+            addFieldsLeft();
+        }
+        else {
+            var inputfield = document.createElement("input");
+            inputfield.type = "text";
+            inputfield.value= "0.71, -0.71";
+            inputfield.name = "leftveccsv";
+            inputfield.id = "leftveccsv";
+            container.appendChild(inputfield);
+        }
+      }
+      function changeFormatRight(){
+        var container = document.getElementById("container2");
+        while (container.hasChildNodes()) {
+            container.removeChild(container.lastChild);
+        }
+        if ((document.getElementById("rightcolumn")).checked){
+            addFieldsRight();
+        }
+        else {
+            var inputfield = document.createElement("input");
+            inputfield.type = "text";
+            inputfield.value= "0.71, 0.71";
+            inputfield.name = "rightveccsv";
+            inputfield.id = "rightveccsv";
+            container.appendChild(inputfield);
+        }
+      }
+      function addFieldsLeft(){
+        // Generate a dynamic number of inputs
+        var number = document.getElementById("numqubits").value;
+        // Get the element where the inputs will be added to
+        var container1 = document.getElementById("container1");
+        // Remove every children it had before
+        while (container1.hasChildNodes()) {
+            container1.removeChild(container1.lastChild);
+        }
+        var howMany = calcPowerOf2(number);
+        for (i=0;i<howMany;i++){
+            // Append a node with a random text
+            // container1.appendChild(document.createTextNode("Member " + (i+1)));
+            // // Create an <input> element, set its type and name attributes
+            var input1 = document.createElement("input");
+            input1.type = "number";
+            input1.name = "leftvecnum" + i;
+            input1.id = "leftvecnum" + i;
+            input1.style = "width: 50px"
+            input1.value = 0;
+            container1.appendChild(input1);
+            container1.appendChild(document.createTextNode(" + "));
+            var input2 = document.createElement("input");
+            input2.type = "number";
+            input2.name = "leftvecnumi" + i;
+            input2.id = "leftvecnumi" + i;
+            input2.style = "width: 50px";
+            input2.value = 0;
+            container1.appendChild(input2);
+            // Append a line break 
+            container1.appendChild(document.createTextNode(" i "));
+            container1.appendChild(document.createElement("br"));
+        }
+      }
+      function addFieldsRight(){
+        var container2 = document.getElementById("container2");
+        // Remove every children it had before
+        while (container2.hasChildNodes()) {
+            container2.removeChild(container2.lastChild);
+        }
+        var number = document.getElementById("numqubits").value;
+        var howMany = calcPowerOf2(number);
+        for (i=0;i<howMany;i++){
+            // Append a node with a random text
+            // container1.appendChild(document.createTextNode("Member " + (i+1)));
+            // // Create an <input> element, set its type and name attributes
+            var input1 = document.createElement("input");
+            input1.type = "number";
+            input1.name = "rightvecnum" + i;
+            input1.id = "rightvecnum" + i;
+            input1.style = "width: 50px";
+            input1.value = 0;
+            container2.appendChild(input1);
+            container2.appendChild(document.createTextNode(" + "));
+            var input2 = document.createElement("input");
+            input2.type = "number";
+            input2.name = "rightvecnumi" + i;
+            input2.id = "rightvecnumi" + i;
+            input2.style = "width: 50px"
+            input2.value = 0;
+            container2.appendChild(input2);
+            // Append a line break 
+            container2.appendChild(document.createTextNode(" i "));
+            container2.appendChild(document.createElement("br"));
+        }
+      }
+      function changeFields(){
+        if ((document.getElementById("leftcolumn")).checked){
+            addFieldsLeft();
+        }
+        if ((document.getElementById("rightcolumn")).checked){
+            addFieldsRight();
+        }
+      }
+    </script>
+</html>
