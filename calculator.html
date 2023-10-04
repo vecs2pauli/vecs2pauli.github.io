@@ -176,48 +176,72 @@ These stabilisers are <MATH>I</MATH> and <MATH>X</MATH>, which can be written as
 <b>Example 2:</b> take as source state the (unnormalised) Bell state <MATH>s&#8407; = (1, 0, 0, 1)</MATH> and as target state the other Bell state state <MATH>t&#8407; = (0, 1, -1, 0)</MATH>. 
 Then <MATH>s&#8407;</MATH> is mapped to <MATH>t&#8407;</MATH> by precisely all Pauli operators which can be written as <MATH>-i &#183; Y &#8855; I</MATH> times <MATH> g</MATH>, 
 where <MATH> g</MATH> is any operator that can be written as a multiplication of <MATH>X &#8855; X</MATH> and <MATH>Z &#8855; Z</MATH> (the stabilisers of <MATH>s&#8407;</MATH>).
-
+</div>
 
 <br>
 <br>
 <hr>
 <br>
-            Choose a number of qubits: <input type="number" id="numqubits" style="width: 50px;" value="1">    <a href="#" id="filldetails" onclick="changeFields()">Update</a>
+Pick a view: <br>
+    <input type="radio" id="vecs2pauliviewbutton" name="viewbutton" value="v2pview" checked="checked" onchange="changeView()">
+        <label for="vecs2pauliviewbutton">Vecs2Pauli</label><br>
+    <input type="radio" id="findstabviewbutton" name="viewbutton" value="fsview" onchange="changeView()">
+        <label for="leftcsv">Find Stabilizer Group</label><br><br><hr>
+        <div id="vecs2pauliview">
+            Choose a number of qubits: <input type="number" id="numqubits" style="width: 50px;" value="1" onchange="changeFields()">
             <br><br>
-        </div>
-        <div id="container">
-            <div style="width: 250px; display: inline-block;">
-		    Pick a format for source vector <MATH>s&#8407;</MATH>: <br>
-                <input type="radio" id="leftcolumn" name="leftformat" value="column" checked="checked" onchange="changeFormatLeft()">
-                    <label for="leftcolumn">column</label><br>
-                <input type="radio" id="leftcsv" name="leftformat" value="csv" onchange="changeFormatLeft()">
-                    <label for="leftcsv">csv</label><br>
+            <div id="container">
+                <div style="width: 250px; display: inline-block;">
+                Pick a format for source vector <MATH>s&#8407;</MATH>: <br>
+                    <input type="radio" id="leftcolumn" name="leftformat" value="column" checked="checked" onchange="changeFormatLeft()">
+                        <label for="leftcolumn">column</label><br>
+                    <input type="radio" id="leftcsv" name="leftformat" value="csv" onchange="changeFormatLeft()">
+                        <label for="leftcsv">csv</label><br>
+                </div>
+                <div style="width: 200px; display: inline-block; text-align:center; align-items: center;" id="container1">
+                    <input type="number" id="leftvecnum0" style="width: 50px;" value="0.71"> + <input type="number" id="leftvecnumi0" style="width: 50px;" value="0"> i |0><br>
+                    <input type="number" id="leftvecnum1" style="width: 50px;" value="-0.71"> + <input type="number" id="leftvecnumi1" style="width: 50px;" value="0"> i |1>
+                </div>
+                <div style="width: 200px; display: inline-block; text-align: center;" id="container2">
+                    <input type="number" id="rightvecnum0" style="width: 50px;" value="0.71"> + <input type="number" id="rightvecnumi0" style="width: 50px;" value="0"> i |0><br>
+                    <input type="number" id="rightvecnum1" style="width: 50px;" value="0.71"> + <input type="number" id="rightvecnumi1" style="width: 50px;" value="0"> i |1>
+                </div>
+                <div style="width: 250px; display: inline-block; align-self:flex-start;">
+                    Pick a format for the target vector <MATH>t&#8407;</MATH>: <br>
+                    <input type="radio" id="rightcolumn" name="rightformat" value="column" checked="checked" onchange="changeFormatRight()">
+                        <label for="rightcolumn">column</label><br>
+                    <input type="radio" id="rightcsv" name="rightformat" value="csv" onchange="changeFormatRight()">
+                        <label for="rightcsv">csv</label><br>
+                </div>
             </div>
-            <div style="width: 200px; display: inline-block; text-align:center; align-items: center;" id="container1">
-                <input type="number" id="leftvecnum0" style="width: 50px;" value="0.71"> + <input type="number" id="leftvecnumi0" style="width: 50px;" value="0"> i <br>
-                <input type="number" id="leftvecnum1" style="width: 50px;" value="-0.71"> + <input type="number" id="leftvecnumi1" style="width: 50px;" value="0"> i
-            </div>
-            <div style="width: 200px; display: inline-block; text-align: center;" id="container2">
-                <input type="number" id="rightvecnum0" style="width: 50px;" value="0.71"> + <input type="number" id="rightvecnumi0" style="width: 50px;" value="0"> i <br>
-                <input type="number" id="rightvecnum1" style="width: 50px;" value="0.71"> + <input type="number" id="rightvecnumi1" style="width: 50px;" value="0"> i
-            </div>
-            <div style="width: 250px; display: inline-block; align-self:flex-start;">
-                Pick a format for the target vector <MATH>t&#8407;</MATH>: <br>
-                <input type="radio" id="rightcolumn" name="rightformat" value="column" checked="checked" onchange="changeFormatRight()">
-                    <label for="rightcolumn">column</label><br>
-                <input type="radio" id="rightcsv" name="rightformat" value="csv" onchange="changeFormatRight()">
-                    <label for="rightcsv">csv</label><br>
-            </div>
-        </div>
+            <br><br>
+        <div style="text-align: center;"><button id="mybutton" onclick="runVecs2Pauli()">Click here to find all Pauli transformations from quantum state <MATH>s&#8407;</MATH> to <MATH>t&#8407;</MATH></button></div>
+    </div>
+        
+
+    <div id="findstabview" style="display: none;">
+        Choose a number of qubits: <input type="number" id="numqubitsstab" style="width: 50px;" value="1" onchange="changeFieldsStab()"> 
         <br><br>
-	<div style="text-align: center;"><button id="mybutton" onclick="runVecs2Pauli()">Click here to find all Pauli transformations from quantum state <MATH>s&#8407;</MATH> to <MATH>t&#8407;</MATH></button></div>
+            <div id="stabcontainer">
+                <div style="width: 250px; display: inline-block;">
+                Pick a format for source vector <MATH>s&#8407;</MATH>: <br>
+                    <input type="radio" id="stabcolumn" name="stabformat" value="column" checked="checked" onchange="changeFormatStab()">
+                        <label for="leftcolumn">column</label><br>
+                    <input type="radio" id="stabcsv" name="stabformat" value="csv" onchange="changeFormatStab()">
+                        <label for="leftcsv">csv</label><br>
+                </div>
+                <div style="width: 200px; display: inline-block; text-align:center; align-items: center;" id="stabcontainer1">
+                    <input type="number" id="vecnum0" style="width: 50px;" value="0.71"> + <input type="number" id="vecnumi0" style="width: 50px;" value="0"> i |0><br>
+                    <input type="number" id="vecnum1" style="width: 50px;" value="-0.71"> + <input type="number" id="vecnumi1" style="width: 50px;" value="0"> i |1>
+                </div>
+            </div>
+            <br><br>
+        <div style="text-align: center;"><button id="mybutton" onclick="runStabGroup()">Click here to find all Pauli transformations from quantum state <MATH>s&#8407;</MATH> to <MATH>t&#8407;</MATH></button></div>
+    </div>
 
-        <textarea id="output" rows="2"></textarea>
+    <textarea id="output" rows="2"></textarea>
 
-	Explanation of how the output is displayed: the set of the transformations mapping <MATH>s&#8407;</MATH> to <MATH>t&#8407;</MATH> is written as <MATH>(&alpha;, &pi;, {g<sub>1</sub>, ..., g<sub>k</sub>})</MATH>, meaning the set <MATH> {&alpha;&#183; &pi;&#183;g | g</MATH> can be written as product of any subset of the <MATH>g<sub>1</sub>,..,g<sub>k</sub> }</MATH>.
-	If <MATH>s&#8407; = t&#8407;</MATH>, then the <MATH>g<sub>1</sub>,..,g<sub>k</sub></MATH> are generators of the stabiliser group of  <MATH>s&#8407;</MATH>.
-
-    <script src="website2.js"></script>
+    <script src="website.js"></script>
     <script>
         Module['onRuntimeInitialized'] = () => { }
         
@@ -234,6 +258,11 @@ where <MATH> g</MATH> is any operator that can be written as a multiplication of
             }
           
       }
+      function createBinaryString (nMask, length) {
+        for (var nFlag = 0, nShifted = nMask, sMask = ""; nFlag < length;
+            nFlag++, sMask += String(nShifted >>> (length-1)), nShifted <<= 1);
+        return sMask;
+        }
       const input = new Float64Array(memory.buffer);
       function runVecs2Pauli(){
         if ((document.getElementById("leftcolumn")).checked && (document.getElementById("rightcolumn")).checked){
@@ -292,6 +321,29 @@ where <MATH> g</MATH> is any operator that can be written as a multiplication of
       function runCsvFormat(){
         print(Module.csvFormat((document.getElementById("leftveccsv").value), (document.getElementById("rightveccsv").value)));
       };
+      function runStabGroup(){
+        if ((document.getElementById("stabcolumn")).checked){
+            runStabNormalFormat();
+        }
+        if ((document.getElementById("stabcsv")).checked){
+            runStabCsvFormat();
+        }
+      }
+      function runStabNormalFormat(){
+        var number = document.getElementById("numqubitsstab").value;
+        var howMany = calcPowerOf2(number);
+        for (i=0;i<howMany;i++){
+            input[i*2] = parseFloat(document.getElementById("vecnum" + i).value);
+            input[i*2 + 1] = parseFloat(document.getElementById("vecnumi" + i).value);
+        }
+        var shortinput = input.slice(0,2*howMany)
+        var heapSpace = Module._malloc(shortinput.length * shortinput.BYTES_PER_ELEMENT);
+        Module.HEAPF64.set(shortinput, heapSpace>>3); // double has 8 bytes
+        print(Module.stabNormalFormat(heapSpace, shortinput.length));
+      };
+      function runStabCsvFormat(){
+        print(Module.stabCsvFormat(document.getElementById("stabcsvvec").value));
+      };
       function calcPowerOf2(x){
         var helper = 1;
         for (i=0;i<x;i++){
@@ -333,6 +385,23 @@ where <MATH> g</MATH> is any operator that can be written as a multiplication of
             container.appendChild(inputfield);
         }
       }
+      function changeFormatStab(){
+        var container = document.getElementById("stabcontainer1");
+        while (container.hasChildNodes()) {
+            container.removeChild(container.lastChild);
+        }
+        if ((document.getElementById("stabcolumn")).checked){
+            addFieldsStab();
+        }
+        else {
+            var inputfield = document.createElement("input");
+            inputfield.type = "text";
+            inputfield.value= "0.71, -0.71";
+            inputfield.name = "stabcsvvec";
+            inputfield.id = "stabcsvvec";
+            container.appendChild(inputfield);
+        }
+      }
       function addFieldsLeft(){
         // Generate a dynamic number of inputs
         var number = document.getElementById("numqubits").value;
@@ -363,7 +432,8 @@ where <MATH> g</MATH> is any operator that can be written as a multiplication of
             input2.value = 0;
             container1.appendChild(input2);
             // Append a line break 
-            container1.appendChild(document.createTextNode(" i "));
+            container1.appendChild(document.createTextNode(" i |"));
+            container1.appendChild(document.createTextNode(i.toString(2).padStart(number, '0') + ">"));
             container1.appendChild(document.createElement("br"));
         }
       }
@@ -395,8 +465,44 @@ where <MATH> g</MATH> is any operator that can be written as a multiplication of
             input2.value = 0;
             container2.appendChild(input2);
             // Append a line break 
-            container2.appendChild(document.createTextNode(" i "));
+            container2.appendChild(document.createTextNode(" i |"));
+            container2.appendChild(document.createTextNode(i.toString(2).padStart(number, '0') + ">"));
             container2.appendChild(document.createElement("br"));
+        }
+      }
+      function changeFieldsStab(){
+        // Generate a dynamic number of inputs
+        var number = document.getElementById("numqubitsstab").value;
+        // Get the element where the inputs will be added to
+        var container1 = document.getElementById("stabcontainer1");
+        // Remove every children it had before
+        while (container1.hasChildNodes()) {
+            container1.removeChild(container1.lastChild);
+        }
+        var howMany = calcPowerOf2(number);
+        for (i=0;i<howMany;i++){
+            // Append a node with a random text
+            // container1.appendChild(document.createTextNode("Member " + (i+1)));
+            // // Create an <input> element, set its type and name attributes
+            var input1 = document.createElement("input");
+            input1.type = "number";
+            input1.name = "vecnum" + i;
+            input1.id = "vecnum" + i;
+            input1.style = "width: 50px"
+            input1.value = 0;
+            container1.appendChild(input1);
+            container1.appendChild(document.createTextNode(" + "));
+            var input2 = document.createElement("input");
+            input2.type = "number";
+            input2.name = "vecnumi" + i;
+            input2.id = "vecnumi" + i;
+            input2.style = "width: 50px";
+            input2.value = 0;
+            container1.appendChild(input2);
+            // Append a line break 
+            container1.appendChild(document.createTextNode(" i |"));
+            container1.appendChild(document.createTextNode(i.toString(2).padStart(number, '0') + ">"));
+            container1.appendChild(document.createElement("br"));
         }
       }
       function changeFields(){
@@ -405,6 +511,16 @@ where <MATH> g</MATH> is any operator that can be written as a multiplication of
         }
         if ((document.getElementById("rightcolumn")).checked){
             addFieldsRight();
+        }
+      }
+      function changeView(){
+        if ((document.getElementById("vecs2pauliviewbutton")).checked){
+            document.getElementById("vecs2pauliview").style.display = 'block';
+            document.getElementById("findstabview").style.display = 'none';
+        }
+        else {
+            document.getElementById("vecs2pauliview").style.display = 'none';
+            document.getElementById("findstabview").style.display = 'block';
         }
       }
     </script>
