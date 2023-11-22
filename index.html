@@ -117,6 +117,9 @@
             <span class="nav-item">
                 <a href="algorithm.html">Algorithm</a>
             </span>
+            <span class="nav-item">
+                <a href="docs.html">Install & docs</a>
+            </span>
         </nav>
 
 <h1>Vecs2Pauli (work in progress)</h1>
@@ -138,6 +141,31 @@ As soon as the Python/C++ library will be available, this website will be update
 
 The project is funded by the Leiden University Fund (<a href="https://www.luf.nl/en/news/2022/project-grants-awarded-in-autumn-2022">LUF news</a>).
 
+<div class="title">
+  <h2>Some use cases</h2>
+</div>
+
+<ul>
+	<li> <b>fast classical simulation of quantum circuits</b>: converting from the slow vector-based simulation to the fast stabilizer-based simulation, if possible</li>
+	<br>
+	<li> <b>educating quantum error correction</b>: students can create quantum error-correction codes in the state-vector picture instead of the less beginner-friendly stabilizer-picture.
+		Specifically, they can start by defining the logical states as vectors, and subsequently use Vecs2Pauli to ...
+		<ul>
+	<br>
+			<li>
+				 ...find the stabilizers of the code space (the usual representation of a code) 
+			</li>
+	<br>
+			<li>
+				 ...find errors which the code cannot correct, i.e. Pauli strings which map one vector in the span to another
+			</li>
+
+		</ul>
+	</li>
+	<br>
+	<li> for a small number of qubits, <b>testing hypotheses</b> regarding whether states can be transformed using 'inexpensive' operations (e.g. local-Clifford)
+	</li>
+</ul>
 
 <div class="title">
   <h2>High-level explanation</h2>
@@ -169,31 +197,10 @@ The conversion from vector to stabilisers is based on a <a href="algorithm.html"
 <br>
 <br>
 
-We state more detailed use cases of Vecs2Pauli below.
 For a formal description of the main task that Vecs2Pauli solves, see <a href="algorithm.html">here</a>.
 
 
-<div class="title">
-  <h2>Some use cases</h2>
-</div>
 
-<ul>
-	<li> <b>fast classical simulation of quantum circuits</b>: converting from the slow vector-based simulation to the fast stabilizer-based simulation, if possible</li>
-	<li> <b>educating quantum error correction</b>: students can create quantum error-correction codes in the state-vector picture instead of the less beginner-friendly stabilizer-picture.
-		Specifically, they can start by defining the logical states as vectors, and subsequently use Vecs2Pauli to ...
-		<ul>
-			<li>
-				 ...find the stabilizers of the code space (the usual representation of a code) 
-			</li>
-			<li>
-				 ...find errors which the code cannot correct, i.e. Pauli strings which map one vector in the span to another
-			</li>
-
-		</ul>
-	</li>
-	<li> <b>testing hypotheses</b> on quantum states for only a few qubits
-	</li>
-</ul>
 
 
 </body>

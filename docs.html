@@ -113,93 +113,23 @@
             <span class="nav-item">
                 <a href="examples.html">Examples</a>
             </span>
-            <span class="nav-item active">
+            <span class="nav-item">
                 <a href="algorithm.html">Algorithm</a>
             </span>
-            <span class="nav-item">
+            <span class="nav-item active">
                 <a href="docs.html">Install & docs</a>
             </span>
         </nav>
 
         <div style="text-align: center;">
-            <h2>Vecs2Pauli solves the Local-Pauli-Transformation task (and more)</h2>
+            <h2>Installation</h2>
         </div>
-	    <b>Local-Pauli-Transformation Task:</b> find all matrices of the form <MATH>&alpha; &#183; P <sub>1</sub> &#8855; P<sub>2</sub> ...  &#8855; P<sub>n</sub> </MATH> which map one given vector <MATH>s&#8407;</MATH> to another vector <MATH>t&#8407;</MATH>, where
-	    <ul>
-		    <li>
-			    <MATH>n</MATH> is the number of qubits
-		    </li>
-		    <li>
-			    <MATH>s&#8407;</MATH> are <MATH>t&#8407;</MATH> are vectors of length <MATH>2<sup>n</sup></MATH> whose entries are complex numbers
-		    </li>
-		    <li>
-			    <MATH>&alpha;</MATH> a complex number
-		    </li>
-		    <li> each <MATH>P<sub>j</sub></MATH> for <MATH>j=1,2,...,n</MATH> is a single-qubit Pauli matrix:
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/MathJax.js?config=TeX-AMS_HTML">
-</script>
-\[
-\text{I} = \begin{bmatrix}
-1  & 0\\
-0 & 1
-\end{bmatrix}
-,
-\qquad
-\text{X} = \begin{bmatrix}
-0  & 1\\
-1 & 0
-\end{bmatrix}
-,
-\qquad
-\text{Y} = \begin{bmatrix}
-0  & -\mathrm{i}\\
-\mathrm{i} & 0
-\end{bmatrix}
-,
-\qquad
-\text{Z} = \begin{bmatrix}
-1  & 0\\
-0 &-1 
-\end{bmatrix}
-.
-\]
-		    </li>
-		    <li> the symbol "<MATH>&#8855;</MATH>" is the <a href="https://en.wikipedia.org/wiki/Kronecker_product">Kronecker product</a>.
-		    </li>
-	    </ul>
-By setting <MATH>t&#8407;</MATH> equal to <MATH>s&#8407;</MATH>, the solution to the task are precisely the (Pauli) stabilisers of <MATH>s&#8407;</MATH>.
-<b>So Vecs2Pauli will find all (Pauli) stabilisers of a vector</b>.
-<br>
-<hr>
-<br>
-<b>Example 1:</b> take as source vector <MATH>s&#8407; = (0.71, 0.71)</MATH> and as target vector the same: <MATH>t&#8407; = (0.71, 0.71)</MATH>. Then Vecs2Pauli finds all Local Pauli matrices which map <MATH>s&#8407;</MATH> to itself, i.e. it finds the stabilisers of <MATH>s&#8407;</MATH>.
-These stabilisers are <MATH>I</MATH> and <MATH>X</MATH>, which can be written as
-<MATH>X</MATH> to the power zero and <MATH>X</MATH> to the power one. Hence, <MATH>X</MATH> is a generator for the group of stabilisers.
-<br>
-<br>
-<b>Example 2:</b> take as source vector <MATH>s&#8407; = (1, 0, 0, 1)</MATH> and as target <MATH>t&#8407; = (0, 1, -1, 0)</MATH> (both are so-called (unnormalised) Bell states). 
-Then <MATH>s&#8407;</MATH> is mapped to <MATH>t&#8407;</MATH> by precisely all Local Pauli matrices which can be written as <MATH>-i &#183; Y &#8855; I</MATH> times <MATH> g</MATH>, 
-where <MATH> g</MATH> is any operator that can be written as a multiplication of <MATH>X &#8855; X</MATH> and <MATH>Z &#8855; Z</MATH> (the stabilisers of <MATH>s&#8407;</MATH>).
-</div>
+	Installation instructions will be added as soon as Vecs2Pauli is released.
 
-<br>
-<br>
-<b>Notation:</b> in general, a state of <MATH>n</MATH> quantum bits can be represented as a vector consisting of <MATH>2<sup>n</sup></MATH> complex numbers.
-Typically, these are written as a sum of terms of the form <MATH> c |x&rangle;</MATH> where <MATH>x</MATH> is a string of <MATH>n</MATH> bits and <MATH>c</MATH> the complex number which is found as the <MATH>x</MATH>-th position of the vector (so-called Dirac notation).
-For example, the vector <MATH>s&#8407;</MATH> from Example 1 is written <MATH> 0.71 |0&rangle; + 0.71 |1&rangle;</MATH>, and the vectors from Example 2 are <MATH> 0|00&rangle; + 1|01&rangle; + 1|10&rangle; + 0|00&rangle; = |01&rangle; + |10&rangle;</MATH> and <MATH>|01&rangle; - |10&rangle;</MATH>.
-<br>
-<br>
-<hr>
-
-
-
-
-The underlying algorithm of Vecs2Pauli which solves the Local-Pauli-Transformation task is based on our earlier work on <a href="https://quantum-journal.org/papers/q-2023-09-11-1108/">a new data structure for simulation of quantum computing</a>, combining decision diagrams and the stabilizer formalism.
-
-<br>
-<br>
-
-[Page under construction]
+        <div style="text-align: center;">
+            <h2>Documentation</h2>
+        </div>
+	A link to the documentation will be added as soon as Vecs2Pauli is released.
     </body>
     
 </html>
