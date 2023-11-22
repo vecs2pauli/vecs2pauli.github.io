@@ -105,10 +105,10 @@
     <body>
         <nav class="menu" id="nav">
             <span class="nav-item">
-                <a href="/">Home</a>
+                <a href="index.html">Home</a>
             </span>
             <span class="nav-item">
-                <a href="calculator.html">Calculator</a>
+                <a href="calculator.html">Online solver</a>
             </span>
             <span class="nav-item active">
                 <a href="examples.html">Examples</a>
@@ -122,5 +122,95 @@
             <h2>[Page under construction]</h2>
         </div>
 
+<div class="title">
+  <h2>Example from quantum error correction</h2>
+</div>
+
+
+The main functionality of Vecs2Pauli is to convert between vectors and local-Pauli transformations.
+As example, we consider the <i>3-qubit repetition code</i>: a scheme which encodes the state of a single qubit into three qubits.
+
+<br>
+<br>
+The first task: given the logical basis vectors of the 3-qubit repetition code, find the code's stabiliser description.
+<head>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body>
+  <pre><code class="python">import vecs2pauli as vtp
+
+# the logical basis states |0>_L and |1>_L of the 3-qubit repetition code
+logical_zero = [1, 0, 0, 0, 0, 0, 0, 0]  # |000>
+logical_one = [0, 0, 0, 0, 0, 0, 0, 1]  # |111>
+
+# finding the stabilizers of the code
+stabilizer_group_zero = vtp.get_stabilizers(logical_zero)  # {ZII, IZI, IIZ}
+stabilizer_group_one = vtp.get_stabilizers(logical_zero)  # {-ZII, -IZI, -IIZ}
+
+print(vtp.intersect_stabilizer_groups(stabilizer_group_zero, stabilizer_group_one))
+# prints {ZZI, IZZ}
+</code></pre>
+</body>
+
+Conversely, given the stabiliser description of the code, find a set of (orthogonal) vectors which spans the codespace:
+<head>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body>
+  <pre><code class="python">import vecs2pauli as vtp
+
+stabilizer_group = [ZZI, IZZ]
+
+print(vtp.find_basis_for_stabilised_subspace(stabilizer_group))
+# prints a list containing [1, 0, 0, 0, 0, 0, 0, 0] and [0, 0, 0, 0, 0, 0, 0, 1],
+# i.e. |000> and |111>
+</code></pre>
+</body>
+
+<hr>
+
+
+
+
+<div class="title">
+  <h2>Explanation of the example above</h2>
+</div>
+In jargon, we say that the 3-qubit repetition code encodes a single <i>logical</i> qubit by using three <i>physical</i> qubits.
+By doing so, it becomes possible to detect and correct for a specific type of error on the single qubit which would not have been possible when one uses a single qubit directly.
+Hence, the 3-qubit repetition code enables <i>quantum error correction</i>.
+
+<br>
+<br>
+In the 3-qubit repetition code, the single-qubit quantum state <MATH>&alpha;|0&rangle; + &beta;|1&rangle;</MATH> would be represented as <MATH>&alpha;|000&rangle; + &beta;|111&rangle;</MATH>*.
+The states <MATH>|000&rangle;</MATH> and <MATH>|111&rangle;</MATH> are said to <i>span the code space</i> of the 3-qubit repetition code, because all states that are not of the form <MATH>&alpha;|000&rangle; + &beta;|111&rangle;</MATH>, are not encoded quantum states.
+Hence, if such a state occurs during the run of a quantum algorithm on our encoded single qubit, we know an error must have occurred.
+<br>
+<br>
+
+Describing an error correction code is the same as describing its code space.
+However, describing the vectors which span the code space (either in vector notation or Diract notation) is no longer possible for codes which use many qubits, because writing down these vectors requires exponentially much space in general.
+Instead, for a very large class of quantum-error correction schemes known as <i>stabiliser codes</i> one uses the stabiliser group: the group of local-Pauli transformations** which keep precisely all vectors in the code space, but no other vectors, unchanged.
+The 3-qubit repetition code is also a stabiliser group, and <MATH>|000&rangle;</MATH> and <MATH>|111&rangle;</MATH> are stabilised by the group <MATH>{I &#8855; I &#8855; I, Z &#8855; Z &#8855; I, I &#8855; Z &#8855; Z, Z &#8855; I &#8855; Z}</MATH>.
+
+<br>
+<br>
+The stabiliser group is exponentially large in <MATH>n - k</MATH>, where <MATH> n</MATH> is the number of physical qubits and <MATH>k</MATH> the number of logical qubits, but fortunately we can describe it using at most <MATH>n-k</MATH> <i>group generators</i>.
+For the 3-qubit code, any stabiliser can be written as any product of <MATH>Z &#8855; Z &#8855; I</MATH> and <MATH> I &#8855; Z &#8855; Z</MATH> (or doing nothing: <MATH>I &#8855; I &#8855; I</MATH>).
+<br>
+<br>
+In the example above, Vecs2Pauli converts between the two representations of the 3-qubit repetition code: a vector basis of the code space (for example <MATH>|000&rangle;</MATH> and <MATH>|111&rangle;</MATH>) and generators of the stabiliser group (<MATH>Z &#8855; Z &#8855; I</MATH> and <MATH> I &#8855; Z &#8855; Z</MATH>).
+
+<br><br>
+
+*Here we use Dirac notation (see the brief explanation <a href="algorithm.html"> here</a>). In vector notation, we would write <MATH>(&alpha;, &beta;)</MATH> for the single-qubit state and <MATH>(&alpha;, 0, 0, 0, 0, 0, 0, &beta;)</MATH> for the three-qubit state.
+
+<br><br>
+**Local-Pauli transformations are defined <a href="algorithm.html"> here</a>.
 
 </html>

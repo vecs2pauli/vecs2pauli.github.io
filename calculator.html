@@ -85,14 +85,14 @@
             }
       
             #output {
-              width: 50%;
-              height: 50px;
+              width: 70%;
+              height: 100px;
               margin: 0 auto;
               margin-top: 5px;
-              border-left: 0px;
-              border-right: 0px;
-              padding-left: 0px;
-              padding-right: 0px;
+              border-left: 10px;
+              border-right: 10px;
+              padding-left: 10px;
+              padding-right: 10px;
               display: block;
               background-color: black;
               color: white;
@@ -105,10 +105,10 @@
     <body>
         <nav class="menu" id="nav">
             <span class="nav-item">
-                <a href="/">Home</a>
+                <a href="index.html">Home</a>
             </span>
             <span class="nav-item active">
-                <a href="calculator.html">Calculator</a>
+                <a href="calculator.html">Online solver</a>
             </span>
             <span class="nav-item">
                 <a href="examples.html">Examples</a>
@@ -119,74 +119,19 @@
         </nav>
 
         <div style="text-align: left;">
-            <h2>Vecs2Pauli</h2>
- Use the interface below to solve the following task:
- <br>
- <br>
-	    <b>Task:</b> find all matrices of the form <MATH>&alpha; &#183; P <sub>1</sub> &#8855; P<sub>2</sub> ...  &#8855; P<sub>n</sub> </MATH> which map one given vector <MATH>s&#8407;</MATH> to another vector <MATH>t&#8407;</MATH>, where
-	    <ul>
-		    <li>
-			    <MATH>n</MATH> is the number of qubits
-		    </li>
-		    <li>
-			    <MATH>s&#8407;</MATH> are <MATH>t&#8407;</MATH> are complex vectors of length <MATH>2<sup>n</sup></MATH>
-		    </li>
-		    <li>
-			    <MATH>&alpha;</MATH> a complex number
-		    </li>
-		    <li> each <MATH>P<sub>j</sub></MATH> for <MATH>j=1,2,...,n</MATH> is a single-qubit Pauli matrix:
-		    </li>
-<script src=
-"http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
-</script>
-\[
-\text{I} = \begin{bmatrix}
-1  & 0\\
-0 & 1
-\end{bmatrix}
-,
-\qquad
-\text{X} = \begin{bmatrix}
-0  & 1\\
-1 & 0
-\end{bmatrix}
-,
-\qquad
-\text{Y} = \begin{bmatrix}
-0  & -\mathrm{i}\\
-\mathrm{i} & 0
-\end{bmatrix}
-,
-\qquad
-\text{Z} = \begin{bmatrix}
-1  & 0\\
-0 &-1 
-\end{bmatrix}
-.
-\]
-	    </ul>
-By setting <MATH>t&#8407;</MATH> equal to <MATH>s&#8407;</MATH>, the solution to the task are precisely the (Pauli) stabilisers of <MATH>s&#8407;</MATH>.
-<br>
-<br>
-<b>Example 1:</b> take as source state the state <MATH>0.71|0&rangle; + 0.71|1&rangle;</MATH>, which is written in the computational basis as vector <MATH>s&#8407; = (0.71, 0.71)</MATH>. Target as target state the same state: <MATH>t&#8407; = (0.71, 0.71)</MATH>. Then Vecs2Pauli finds all Pauli operators which map <MATH>s&#8407;</MATH> to itself, i.e. it finds the stabilisers of <MATH>s&#8407;</MATH>.
-These stabilisers are <MATH>I</MATH> and <MATH>X</MATH>, which can be written as
-<MATH>X</MATH> to the power zero and <MATH>X</MATH> to the power one. Hence, <MATH>X</MATH> is a generator for the group of stabilisers.
-<br>
-<br>
-<b>Example 2:</b> take as source state the (unnormalised) Bell state <MATH>s&#8407; = (1, 0, 0, 1)</MATH> and as target state the other Bell state state <MATH>t&#8407; = (0, 1, -1, 0)</MATH>. 
-Then <MATH>s&#8407;</MATH> is mapped to <MATH>t&#8407;</MATH> by precisely all Pauli operators which can be written as <MATH>-i &#183; Y &#8855; I</MATH> times <MATH> g</MATH>, 
-where <MATH> g</MATH> is any operator that can be written as a multiplication of <MATH>X &#8855; X</MATH> and <MATH>Z &#8855; Z</MATH> (the stabilisers of <MATH>s&#8407;</MATH>).
-</div>
 
+
+<h2>Online solver for the Local-Pauli-Transformation task</h2>
+(This online solver finds all Local-Pauli transformations between vectors. See <a href="algorithm.html">here</a> for a detailed description.)
 <br>
 <br>
-<hr>
-<br>
-Pick a view: <br>
+What would you like to compute? <br>
     <input type="radio" id="vecs2pauliviewbutton" name="viewbutton" value="v2pview" checked="checked" onchange="changeView()">
-        <label for="vecs2pauliviewbutton">Vecs2Pauli</label><br>
+        <label for="vecs2pauliviewbutton"> Find all Local-Pauli transformations mapping <MATH>s&#8407;</MATH> to a different vector <MATH>t&#8407;</MATH>
+	</label>		<br>
     <input type="radio" id="findstabviewbutton" name="viewbutton" value="fsview" onchange="changeView()">
-        <label for="leftcsv">Find Stabilizer Group</label><br><br><hr>
+    <label for="leftcsv">Find the stabilizer group of a single vector <MATH>s&#8407;</MATH>
+	</label><br><br>
         <div id="vecs2pauliview">
             Choose a number of qubits: <input type="number" id="numqubits" style="width: 50px;" value="1" onchange="changeFields()">
             <br><br>
@@ -214,6 +159,8 @@ Pick a view: <br>
                         <label for="rightcsv">csv</label><br>
                 </div>
             </div>
+            <br>
+	    Choose 'csv' for a list of complex numbers separated by commas, for example the contents of a <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html">NumPy array</a>.
             <br><br>
         <div style="text-align: center;"><button id="mybutton" onclick="runVecs2Pauli()">Click here to find all Pauli transformations from quantum state <MATH>s&#8407;</MATH> to <MATH>t&#8407;</MATH></button></div>
     </div>
@@ -224,7 +171,7 @@ Pick a view: <br>
         <br><br>
             <div id="stabcontainer">
                 <div style="width: 250px; display: inline-block;">
-                Pick a format for source vector <MATH>s&#8407;</MATH>: <br>
+                Pick a format for the input vector <MATH>s&#8407;</MATH>: <br>
                     <input type="radio" id="stabcolumn" name="stabformat" value="column" checked="checked" onchange="changeFormatStab()">
                         <label for="leftcolumn">column</label><br>
                     <input type="radio" id="stabcsv" name="stabformat" value="csv" onchange="changeFormatStab()">
@@ -235,8 +182,10 @@ Pick a view: <br>
                     <input type="number" id="vecnum1" style="width: 50px;" value="-0.71"> + <input type="number" id="vecnumi1" style="width: 50px;" value="0"> i |1>
                 </div>
             </div>
+            <br>
+	    Choose 'csv' for a list of complex numbers separated by commas, for example the contents of a <a href="https://numpy.org/doc/stable/reference/generated/numpy.array.html">NumPy array</a>.
             <br><br>
-        <div style="text-align: center;"><button id="mybutton" onclick="runStabGroup()">Click here to find all Pauli transformations from quantum state <MATH>s&#8407;</MATH> to <MATH>t&#8407;</MATH></button></div>
+        <div style="text-align: center;"><button id="mybutton" onclick="runStabGroup()">Click here to all find Pauli stabilisers of <MATH>s&#8407;</MATH></div>
     </div>
 
     <textarea id="output" rows="2"></textarea>
