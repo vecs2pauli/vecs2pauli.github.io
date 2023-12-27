@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html>
     <head>
-	<title>Vecs2Pauli: software for converting between quantum-state vectors and local-Pauli transformations</title>	
+	<title>Vecs2Pauli: software for converting between quantum-state vectors and the (Pauli) stabilizer formalism </title>	
         <link rel="stylesheet" href="styles.css">
         <style>
+	h1 {
+	  text-align: center;
+	}
             body {
               font-family: arial;
 	      font-size: 12pt;
@@ -122,16 +125,20 @@
             </span>
         </nav>
 
-<h1>Vecs2Pauli (work in progress)</h1>
+<h1>Vecs2Pauli</h1>
+<h2>Software for converting between quantum-state vectors and the (Pauli) stabilizer formalism </h2>	
  
-<b>Vecs2Pauli</b> is Python software for
-
-which finds all Pauli stabilizers of a given quantum state, where the quantum state is given as a vector. More generally, it finds all local-Pauli transformations (strings of specific <MATH>2&#xd7;2</MATH> matrices) which map one given quantum state  to another.
+<b>Vecs2Pauli</b> is Python/C++ software which finds all Pauli stabilizers of a given quantum state, where the quantum state is given as a vector. More generally, it finds all local-Pauli transformations (strings of specific <MATH>2&#xd7;2</MATH> matrices) which map one given quantum state to another.
 <br>
 <br>
 
-Vecs2Pauli is currently in its final stage of development as a Python/C++ library, but the <b><a href="calculator.html">online solver is already available</a></b> (beta version).
-As soon as the Python/C++ library will be available, this website will be updated.
+Vecs2Pauli is currently in its final stage of development as a Python/C++ library, but:
+<ul>
+	<li> the <b><a href="calculator.html">online solver is already available</a></b> (no need to install anything!)
+	</li>
+	<li> the beta version of the <b>Python package is <a href="https://github.com/vecs2pauli/vecs2pauli">already available too </a></b>
+	</li>
+</ul>
 
 
 
@@ -147,13 +154,10 @@ As soon as the Python/C++ library will be available, this website will be update
 		<b>No installation needed</b> to use the <b><a href="calculator.html">online solver</a></b> which computes a vector's stabilisers, or local-Pauli transformations between vectors
 	</li>
 	<li>
-		Includes an interface which is <b>compatible with existing stabiliser-based simulators</b> such as Stim and QisKit
-	</li>
-	<li>
 		<b>Easy to get started</b> because of the Python interface, but <b>as fast as possible</b> due to the C++ backend
 	</li>
 	<li>
-		<b>Fully open source</b>
+		<b>Fully open source</b>: code is <a href="https://github.com/vecs2pauli/vecs2pauli">available here</a></b>.
 	</li>
 </ul>
 
