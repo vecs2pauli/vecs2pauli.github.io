@@ -1,0 +1,3 @@
+[submodule "vecs2pauli"]
+	path = extern/vecs2pauli
+	url = https://github.com/vecs2pauli/vecs2pauli.git

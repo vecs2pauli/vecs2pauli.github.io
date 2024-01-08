@@ -58,8 +58,7 @@ function locateFile(path) {
 // Hooks that are implemented differently in different runtime environments.
 var read_,
     readAsync,
-    readBinary,
-    setWindowTitle;
+    readBinary;
 
 if (ENVIRONMENT_IS_NODE) {
   if (typeof process == 'undefined' || !process.release || process.release.name !== 'node') throw new Error('not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)');
@@ -269,8 +268,6 @@ read_ = (url) => {
 
 // end include: web_or_worker_shell_read.js
   }
-
-  setWindowTitle = (title) => document.title = title;
 } else
 {
   throw new Error('environment detection error');
@@ -306,7 +303,7 @@ assert(typeof Module['filePackagePrefixURL'] == 'undefined', 'Module.filePackage
 assert(typeof Module['read'] == 'undefined', 'Module.read option was removed (modify read_ in JS)');
 assert(typeof Module['readAsync'] == 'undefined', 'Module.readAsync option was removed (modify readAsync in JS)');
 assert(typeof Module['readBinary'] == 'undefined', 'Module.readBinary option was removed (modify readBinary in JS)');
-assert(typeof Module['setWindowTitle'] == 'undefined', 'Module.setWindowTitle option was removed (modify setWindowTitle in JS)');
+assert(typeof Module['setWindowTitle'] == 'undefined', 'Module.setWindowTitle option was removed (modify emscripten_set_window_title in JS)');
 assert(typeof Module['TOTAL_MEMORY'] == 'undefined', 'Module.TOTAL_MEMORY has been renamed Module.INITIAL_MEMORY');
 legacyModuleProp('asm', 'wasmExports');
 legacyModuleProp('read', 'read_');
@@ -338,9 +335,8 @@ assert(!ENVIRONMENT_IS_SHELL, "shell environment detected but not enabled at bui
 // An online HTML version (which may be of a different version of Emscripten)
 //    is up at http://kripken.github.io/emscripten-site/docs/api_reference/preamble.js.html
 
-var wasmBinary;
+var wasmBinary; 
 if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];legacyModuleProp('wasmBinary', 'wasmBinary');
-var noExitRuntime = Module['noExitRuntime'] || true;legacyModuleProp('noExitRuntime', 'noExitRuntime');
 
 if (typeof WebAssembly != 'object') {
   abort('no native wasm support detected');
@@ -363,6 +359,10 @@ var ABORT = false;
 // but only when noExitRuntime is false.
 var EXITSTATUS;
 
+// In STRICT mode, we only define assert() when ASSERTIONS is set.  i.e. we
+// don't define it at all in release modes.  This matches the behaviour of
+// MINIMAL_RUNTIME.
+// TODO(sbc): Make this the default even without STRICT enabled.
 /** @type {function(*, string=)} */
 function assert(condition, text) {
   if (!condition) {
@@ -414,12 +414,6 @@ assert(typeof Int32Array != 'undefined' && typeof Float64Array !== 'undefined' &
 assert(!Module['wasmMemory'], 'Use of `wasmMemory` detected.  Use -sIMPORTED_MEMORY to define wasmMemory externally');
 assert(!Module['INITIAL_MEMORY'], 'Detected runtime INITIAL_MEMORY setting.  Use -sIMPORTED_MEMORY to define wasmMemory dynamically');
 
-// include: runtime_init_table.js
-// In regular non-RELOCATABLE mode the table is exported
-// from the wasm module and this will be assigned once
-// the exports are available.
-var wasmTable;
-// end include: runtime_init_table.js
 // include: runtime_stack_check.js
 // Initializes the stack cookie. Called at the startup of main and at the startup of each thread in pthreads mode.
 function writeStackCookie() {
@@ -475,12 +469,6 @@ var __ATEXIT__    = []; // functions called during shutdown
 var __ATPOSTRUN__ = []; // functions called after the main() is called
 
 var runtimeInitialized = false;
-
-var runtimeKeepaliveCounter = 0;
-
-function keepRuntimeAlive() {
-  return noExitRuntime || runtimeKeepaliveCounter > 0;
-}
 
 function preRun() {
   if (Module['preRun']) {
@@ -683,16 +671,17 @@ function abort(what) {
 // Prefix of data URIs emitted by SINGLE_FILE and related options.
 var dataURIPrefix = 'data:application/octet-stream;base64,';
 
-// Indicates whether filename is a base64 data URI.
-function isDataURI(filename) {
-  // Prefix of data URIs emitted by SINGLE_FILE and related options.
-  return filename.startsWith(dataURIPrefix);
-}
+/**
+ * Indicates whether filename is a base64 data URI.
+ * @noinline
+ */
+var isDataURI = (filename) => filename.startsWith(dataURIPrefix);
 
-// Indicates whether filename is delivered via file protocol (as opposed to http/https)
-function isFileURI(filename) {
-  return filename.startsWith('file://');
-}
+/**
+ * Indicates whether filename is delivered via file protocol (as opposed to http/https)
+ * @noinline
+ */
+var isFileURI = (filename) => filename.startsWith('file://');
 // end include: URIUtils.js
 function createExportWrapper(name) {
   return function() {
@@ -816,9 +805,8 @@ function createWasm() {
   // performing other necessary setup
   /** @param {WebAssembly.Module=} module*/
   function receiveInstance(instance, module) {
-    var exports = instance.exports;
+    wasmExports = instance.exports;
 
-    wasmExports = exports;
     
 
     wasmMemory = wasmExports['memory'];
@@ -837,7 +825,7 @@ function createWasm() {
     addOnInit(wasmExports['__wasm_call_ctors']);
 
     removeRunDependency('wasm-instantiate');
-    return exports;
+    return wasmExports;
   }
   // wait for the pthread pool (if any)
   addRunDependency('wasm-instantiate');
@@ -919,7 +907,7 @@ function missingGlobal(sym, msg) {
     Object.defineProperty(globalThis, sym, {
       configurable: true,
       get() {
-        warnOnce('`' + sym + '` is not longer defined by emscripten. ' + msg);
+        warnOnce(`\`${sym}\` is not longer defined by emscripten. ${msg}`);
         return undefined;
       }
     });
@@ -936,7 +924,7 @@ function missingLibrarySymbol(sym) {
       get() {
         // Can't `abort()` here because it would break code that does runtime
         // checks.  e.g. `if (typeof SDL === 'undefined')`.
-        var msg = '`' + sym + '` is a library symbol and not included by default; add it to your library.js __deps or to DEFAULT_LIBRARY_FUNCS_TO_INCLUDE on the command line';
+        var msg = `\`${sym}\` is a library symbol and not included by default; add it to your library.js __deps or to DEFAULT_LIBRARY_FUNCS_TO_INCLUDE on the command line`;
         // DEFAULT_LIBRARY_FUNCS_TO_INCLUDE requires the name as it appears in
         // library.js, which means $name for a JS name with no prefix, or name
         // for a JS name like _name.
@@ -944,7 +932,7 @@ function missingLibrarySymbol(sym) {
         if (!librarySymbol.startsWith('_')) {
           librarySymbol = '$' + sym;
         }
-        msg += " (e.g. -sDEFAULT_LIBRARY_FUNCS_TO_INCLUDE='" + librarySymbol + "')";
+        msg += ` (e.g. -sDEFAULT_LIBRARY_FUNCS_TO_INCLUDE='${librarySymbol}')`;
         if (isExportedByForceFilesystem(sym)) {
           msg += '. Alternatively, forcing filesystem support (-sFORCE_FILESYSTEM) can export this for you';
         }
@@ -963,7 +951,7 @@ function unexportedRuntimeSymbol(sym) {
     Object.defineProperty(Module, sym, {
       configurable: true,
       get() {
-        var msg = "'" + sym + "' was not exported. add it to EXPORTED_RUNTIME_METHODS (see the Emscripten FAQ)";
+        var msg = `'${sym}' was not exported. add it to EXPORTED_RUNTIME_METHODS (see the Emscripten FAQ)`;
         if (isExportedByForceFilesystem(sym)) {
           msg += '. Alternatively, forcing filesystem support (-sFORCE_FILESYSTEM) can export this for you';
         }
@@ -1017,6 +1005,8 @@ function dbg(text) {
       default: abort(`invalid type for getValue: ${type}`);
     }
   }
+
+  var noExitRuntime = Module['noExitRuntime'] || true;
 
   var ptrToString = (ptr) => {
       assert(typeof ptr === 'number');
@@ -1147,7 +1137,7 @@ function dbg(text) {
       }
       embind_charCodes = codes;
     };
-  var embind_charCodes = undefined;
+  var embind_charCodes;
   var readLatin1String = (ptr) => {
       var ret = "";
       var c = ptr;
@@ -1166,13 +1156,13 @@ function dbg(text) {
   var typeDependencies = {
   };
   
-  var BindingError = undefined;
+  var BindingError;
   var throwBindingError = (message) => { throw new BindingError(message); };
   
   
   
   
-  var InternalError = undefined;
+  var InternalError;
   var throwInternalError = (message) => { throw new InternalError(message); };
   var whenDependentTypesAreResolved = (myTypes, dependentTypes, getTypeConverters) => {
       myTypes.forEach(function(type) {
@@ -1245,6 +1235,7 @@ function dbg(text) {
     }
   
   var GenericWireTypeSize = 8;
+  /** @suppress {globalThis} */
   var __embind_register_bool = (rawType, name, trueValue, falseValue) => {
       name = readLatin1String(name);
       registerType(rawType, {
@@ -1347,6 +1338,7 @@ function dbg(text) {
   
   
   
+  /** @suppress {globalThis} */
   function simpleReadValueFromPointer(pointer) {
       return this['fromWireType'](HEAP32[((pointer)>>2)]);
     }
@@ -1414,20 +1406,9 @@ function dbg(text) {
       });
     };
 
-  var char_0 = 48;
-  
-  var char_9 = 57;
-  var makeLegalFunctionName = (name) => {
-      if (undefined === name) {
-        return '_unknown';
-      }
-      name = name.replace(/[^a-zA-Z0-9_]/g, '$');
-      var f = name.charCodeAt(0);
-      if (f >= char_0 && f <= char_9) {
-        return `_${name}`;
-      }
-      return name;
-    };
+  var createNamedFunction = (name, body) => Object.defineProperty(body, 'name', {
+      value: name
+    });
   
   var runDestructors = (destructors) => {
       while (destructors.length) {
@@ -1438,16 +1419,6 @@ function dbg(text) {
     };
   
   
-  function createNamedFunction(name, body) {
-      name = makeLegalFunctionName(name);
-      // Use an abject with a computed property name to create a new function with
-      // a name specified at runtime, but without using `new Function` or `eval`.
-      return {
-        [name]: function() {
-          return body.apply(this, arguments);
-        }
-      }[name];
-    }
   function newFunc(constructor, argumentList) {
       if (!(constructor instanceof Function)) {
         throw new TypeError(`new_ called with constructor type ${typeof(constructor)} which is not a function`);
@@ -1516,7 +1487,7 @@ function dbg(text) {
       }
   
       var invokerFnBody = `
-        return function ${makeLegalFunctionName(humanName)}(${argsList}) {
+        return function (${argsList}) {
         if (arguments.length !== ${argCount - 2}) {
           throwBindingError('function ${humanName} called with ' + arguments.length + ' arguments, expected ${argCount - 2}');
         }`;
@@ -1569,7 +1540,8 @@ function dbg(text) {
   
       args1.push(invokerFnBody);
   
-      return newFunc(Function, args1).apply(null, args2);
+      var invokerFn = newFunc(Function, args1).apply(null, args2);
+      return createNamedFunction(humanName, invokerFn);
     }
   
   var ensureOverloadTable = (proto, methodName, humanName) => {
@@ -1654,6 +1626,8 @@ function dbg(text) {
     };
   
   var wasmTableMirror = [];
+  
+  var wasmTable;
   var getWasmTableEntry = (funcPtr) => {
       var func = wasmTableMirror[funcPtr];
       if (!func) {
@@ -1729,7 +1703,7 @@ function dbg(text) {
   
       return errorClass;
     };
-  var UnboundTypeError = undefined;
+  var UnboundTypeError;
   
   
   
@@ -1761,9 +1735,21 @@ function dbg(text) {
       throw new UnboundTypeError(`${message}: ` + unboundTypes.map(getTypeName).join([', ']));
     };
   
+  
+  var getFunctionName = (signature) => {
+      signature = signature.trim();
+      const argsIndex = signature.indexOf("(");
+      if (argsIndex !== -1) {
+        assert(signature[signature.length - 1] == ")", "Parentheses for argument names should match.");
+        return signature.substr(0, argsIndex);
+      } else {
+        return signature;
+      }
+    };
   var __embind_register_function = (name, argCount, rawArgTypesAddr, signature, rawInvoker, fn, isAsync) => {
       var argTypes = heap32VectorToArray(argCount, rawArgTypesAddr);
       name = readLatin1String(name);
+      name = getFunctionName(name);
   
       rawInvoker = embind__requireFunction(signature, rawInvoker);
   
@@ -1797,6 +1783,7 @@ function dbg(text) {
     };
   
   
+  /** @suppress {globalThis} */
   var __embind_register_integer = (primitiveType, name, size, minRange, maxRange) => {
       name = readLatin1String(name);
       // LLVM doesn't have signed and unsigned 32-bit types, so u32 literals come
@@ -1879,13 +1866,14 @@ function dbg(text) {
 
   
   
+  /** @suppress {globalThis} */
   function readPointer(pointer) {
       return this['fromWireType'](HEAPU32[((pointer)>>2)]);
     }
   
   
   var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
-      assert(typeof str === 'string');
+      assert(typeof str === 'string', `stringToUTF8Array expects a string (got ${typeof str})`);
       // Parameter maxBytesToWrite is not optional. Negative values, 0, null,
       // undefined and false each don't write out any bytes.
       if (!(maxBytesToWrite > 0))
@@ -2029,7 +2017,7 @@ function dbg(text) {
      * @return {string}
      */
   var UTF8ToString = (ptr, maxBytesToRead) => {
-      assert(typeof ptr == 'number');
+      assert(typeof ptr == 'number', `UTF8ToString expects a number (got ${typeof ptr})`);
       return ptr ? UTF8ArrayToString(HEAPU8, ptr, maxBytesToRead) : '';
     };
   var __embind_register_std_string = (rawType, name) => {
@@ -2040,7 +2028,9 @@ function dbg(text) {
   
       registerType(rawType, {
         name,
-        'fromWireType': (value) => {
+        // For some method names we use string keys here since they are part of
+        // the public/external API and/or used by the runtime-generated code.
+        'fromWireType'(value) {
           var length = HEAPU32[((value)>>2)];
           var payload = value + 4;
   
@@ -2074,7 +2064,7 @@ function dbg(text) {
   
           return str;
         },
-        'toWireType': (destructors, value) => {
+        'toWireType'(destructors, value) {
           if (value instanceof ArrayBuffer) {
             value = new Uint8Array(value);
           }
@@ -2121,7 +2111,9 @@ function dbg(text) {
         },
         'argPackAdvance': GenericWireTypeSize,
         'readValueFromPointer': readPointer,
-        destructorFunction: (ptr) => _free(ptr),
+        destructorFunction(ptr) {
+          _free(ptr);
+        },
       });
     };
 
@@ -2315,7 +2307,9 @@ function dbg(text) {
         },
         'argPackAdvance': GenericWireTypeSize,
         'readValueFromPointer': simpleReadValueFromPointer,
-        destructorFunction: (ptr) => _free(ptr),
+        destructorFunction(ptr) {
+          _free(ptr);
+        }
       });
     };
 
@@ -2336,7 +2330,7 @@ function dbg(text) {
       abort('native code called abort()');
     };
 
-  var _emscripten_memcpy_big = (dest, src, num) => HEAPU8.copyWithin(dest, src, src + num);
+  var _emscripten_memcpy_js = (dest, src, num) => HEAPU8.copyWithin(dest, src, src + num);
 
   var getHeapMax = () =>
       HEAPU8.length;
@@ -2466,9 +2460,7 @@ function dbg(text) {
         var paths = Array.prototype.slice.call(arguments);
         return PATH.normalize(paths.join('/'));
       },
-  join2:(l, r) => {
-        return PATH.normalize(l + '/' + r);
-      },
+  join2:(l, r) => PATH.normalize(l + '/' + r),
   };
   
   var initRandomFill = () => {
@@ -3128,6 +3120,10 @@ function dbg(text) {
     };
   
   
+  var FS_createDataFile = (parent, name, fileData, canRead, canWrite, canOwn) => {
+      FS.createDataFile(parent, name, fileData, canRead, canWrite, canOwn);
+    };
+  
   var preloadPlugins = Module['preloadPlugins'] || [];
   var FS_handledByPreloadPlugin = (byteArray, fullname, finish, onerror) => {
       // Ensure plugins are ready.
@@ -3152,7 +3148,7 @@ function dbg(text) {
         function finish(byteArray) {
           if (preFinish) preFinish();
           if (!dontCreateFile) {
-            FS.createDataFile(parent, name, byteArray, canRead, canWrite, canOwn);
+            FS_createDataFile(parent, name, byteArray, canRead, canWrite, canOwn);
           }
           if (onload) onload();
           removeRunDependency(dep);
@@ -3322,7 +3318,128 @@ function dbg(text) {
   };
   
   var ERRNO_CODES = {
-  };
+      'EPERM': 63,
+      'ENOENT': 44,
+      'ESRCH': 71,
+      'EINTR': 27,
+      'EIO': 29,
+      'ENXIO': 60,
+      'E2BIG': 1,
+      'ENOEXEC': 45,
+      'EBADF': 8,
+      'ECHILD': 12,
+      'EAGAIN': 6,
+      'EWOULDBLOCK': 6,
+      'ENOMEM': 48,
+      'EACCES': 2,
+      'EFAULT': 21,
+      'ENOTBLK': 105,
+      'EBUSY': 10,
+      'EEXIST': 20,
+      'EXDEV': 75,
+      'ENODEV': 43,
+      'ENOTDIR': 54,
+      'EISDIR': 31,
+      'EINVAL': 28,
+      'ENFILE': 41,
+      'EMFILE': 33,
+      'ENOTTY': 59,
+      'ETXTBSY': 74,
+      'EFBIG': 22,
+      'ENOSPC': 51,
+      'ESPIPE': 70,
+      'EROFS': 69,
+      'EMLINK': 34,
+      'EPIPE': 64,
+      'EDOM': 18,
+      'ERANGE': 68,
+      'ENOMSG': 49,
+      'EIDRM': 24,
+      'ECHRNG': 106,
+      'EL2NSYNC': 156,
+      'EL3HLT': 107,
+      'EL3RST': 108,
+      'ELNRNG': 109,
+      'EUNATCH': 110,
+      'ENOCSI': 111,
+      'EL2HLT': 112,
+      'EDEADLK': 16,
+      'ENOLCK': 46,
+      'EBADE': 113,
+      'EBADR': 114,
+      'EXFULL': 115,
+      'ENOANO': 104,
+      'EBADRQC': 103,
+      'EBADSLT': 102,
+      'EDEADLOCK': 16,
+      'EBFONT': 101,
+      'ENOSTR': 100,
+      'ENODATA': 116,
+      'ETIME': 117,
+      'ENOSR': 118,
+      'ENONET': 119,
+      'ENOPKG': 120,
+      'EREMOTE': 121,
+      'ENOLINK': 47,
+      'EADV': 122,
+      'ESRMNT': 123,
+      'ECOMM': 124,
+      'EPROTO': 65,
+      'EMULTIHOP': 36,
+      'EDOTDOT': 125,
+      'EBADMSG': 9,
+      'ENOTUNIQ': 126,
+      'EBADFD': 127,
+      'EREMCHG': 128,
+      'ELIBACC': 129,
+      'ELIBBAD': 130,
+      'ELIBSCN': 131,
+      'ELIBMAX': 132,
+      'ELIBEXEC': 133,
+      'ENOSYS': 52,
+      'ENOTEMPTY': 55,
+      'ENAMETOOLONG': 37,
+      'ELOOP': 32,
+      'EOPNOTSUPP': 138,
+      'EPFNOSUPPORT': 139,
+      'ECONNRESET': 15,
+      'ENOBUFS': 42,
+      'EAFNOSUPPORT': 5,
+      'EPROTOTYPE': 67,
+      'ENOTSOCK': 57,
+      'ENOPROTOOPT': 50,
+      'ESHUTDOWN': 140,
+      'ECONNREFUSED': 14,
+      'EADDRINUSE': 3,
+      'ECONNABORTED': 13,
+      'ENETUNREACH': 40,
+      'ENETDOWN': 38,
+      'ETIMEDOUT': 73,
+      'EHOSTDOWN': 142,
+      'EHOSTUNREACH': 23,
+      'EINPROGRESS': 26,
+      'EALREADY': 7,
+      'EDESTADDRREQ': 17,
+      'EMSGSIZE': 35,
+      'EPROTONOSUPPORT': 66,
+      'ESOCKTNOSUPPORT': 137,
+      'EADDRNOTAVAIL': 4,
+      'ENETRESET': 39,
+      'EISCONN': 30,
+      'ENOTCONN': 53,
+      'ETOOMANYREFS': 141,
+      'EUSERS': 136,
+      'EDQUOT': 19,
+      'ESTALE': 72,
+      'ENOTSUP': 138,
+      'ENOMEDIUM': 148,
+      'EILSEQ': 25,
+      'EOVERFLOW': 61,
+      'ECANCELED': 11,
+      'ENOTRECOVERABLE': 56,
+      'EOWNERDEAD': 62,
+      'ESTRPIPE': 135,
+    };
   
   var demangle = (func) => {
       warnOnce('warning: build with -sDEMANGLE_SUPPORT to link in libcxxabi demangling');
@@ -4663,7 +4780,6 @@ function dbg(text) {
           FS.close(stream);
           FS.chmod(node, mode);
         }
-        return node;
       },
   createDevice(parent, name, input, output) {
         var path = PATH.join2(typeof parent == 'string' ? parent : FS.getPath(parent), name);
@@ -4963,19 +5079,19 @@ function dbg(text) {
         HEAP32[(((buf)+(12))>>2)] = stat.uid;
         HEAP32[(((buf)+(16))>>2)] = stat.gid;
         HEAP32[(((buf)+(20))>>2)] = stat.rdev;
-        (tempI64 = [stat.size>>>0,(tempDouble=stat.size,(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[(((buf)+(24))>>2)] = tempI64[0],HEAP32[(((buf)+(28))>>2)] = tempI64[1]);
+        (tempI64 = [stat.size>>>0,(tempDouble = stat.size,(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[(((buf)+(24))>>2)] = tempI64[0],HEAP32[(((buf)+(28))>>2)] = tempI64[1]);
         HEAP32[(((buf)+(32))>>2)] = 4096;
         HEAP32[(((buf)+(36))>>2)] = stat.blocks;
         var atime = stat.atime.getTime();
         var mtime = stat.mtime.getTime();
         var ctime = stat.ctime.getTime();
-        (tempI64 = [Math.floor(atime / 1000)>>>0,(tempDouble=Math.floor(atime / 1000),(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[(((buf)+(40))>>2)] = tempI64[0],HEAP32[(((buf)+(44))>>2)] = tempI64[1]);
+        (tempI64 = [Math.floor(atime / 1000)>>>0,(tempDouble = Math.floor(atime / 1000),(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[(((buf)+(40))>>2)] = tempI64[0],HEAP32[(((buf)+(44))>>2)] = tempI64[1]);
         HEAPU32[(((buf)+(48))>>2)] = (atime % 1000) * 1000;
-        (tempI64 = [Math.floor(mtime / 1000)>>>0,(tempDouble=Math.floor(mtime / 1000),(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[(((buf)+(56))>>2)] = tempI64[0],HEAP32[(((buf)+(60))>>2)] = tempI64[1]);
+        (tempI64 = [Math.floor(mtime / 1000)>>>0,(tempDouble = Math.floor(mtime / 1000),(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[(((buf)+(56))>>2)] = tempI64[0],HEAP32[(((buf)+(60))>>2)] = tempI64[1]);
         HEAPU32[(((buf)+(64))>>2)] = (mtime % 1000) * 1000;
-        (tempI64 = [Math.floor(ctime / 1000)>>>0,(tempDouble=Math.floor(ctime / 1000),(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[(((buf)+(72))>>2)] = tempI64[0],HEAP32[(((buf)+(76))>>2)] = tempI64[1]);
+        (tempI64 = [Math.floor(ctime / 1000)>>>0,(tempDouble = Math.floor(ctime / 1000),(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[(((buf)+(72))>>2)] = tempI64[0],HEAP32[(((buf)+(76))>>2)] = tempI64[1]);
         HEAPU32[(((buf)+(80))>>2)] = (ctime % 1000) * 1000;
-        (tempI64 = [stat.ino>>>0,(tempDouble=stat.ino,(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[(((buf)+(88))>>2)] = tempI64[0],HEAP32[(((buf)+(92))>>2)] = tempI64[1]);
+        (tempI64 = [stat.ino>>>0,(tempDouble = stat.ino,(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[(((buf)+(88))>>2)] = tempI64[0],HEAP32[(((buf)+(92))>>2)] = tempI64[1]);
         return 0;
       },
   doMsync(addr, stream, len, flags, offset) {
@@ -4992,7 +5108,8 @@ function dbg(text) {
   varargs:undefined,
   get() {
         assert(SYSCALLS.varargs != undefined);
-        var ret = HEAP32[((SYSCALLS.varargs)>>2)];
+        // the `+` prepended here is necessary to convince the JSCompiler that varargs is indeed a number.
+        var ret = HEAP32[((+SYSCALLS.varargs)>>2)];
         SYSCALLS.varargs += 4;
         return ret;
       },
@@ -5085,7 +5202,7 @@ function dbg(text) {
       if (isNaN(offset)) return 61;
       var stream = SYSCALLS.getStreamFromFD(fd);
       FS.llseek(stream, offset, whence);
-      (tempI64 = [stream.position>>>0,(tempDouble=stream.position,(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[((newOffset)>>2)] = tempI64[0],HEAP32[(((newOffset)+(4))>>2)] = tempI64[1]);
+      (tempI64 = [stream.position>>>0,(tempDouble = stream.position,(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[((newOffset)>>2)] = tempI64[0],HEAP32[(((newOffset)+(4))>>2)] = tempI64[1]);
       if (stream.getdents && offset === 0 && whence === 0) stream.getdents = null; // reset readdir state
       return 0;
     } catch (e) {
@@ -5125,9 +5242,7 @@ function dbg(text) {
   }
   }
 
-  var isLeapYear = (year) => {
-        return year%4 === 0 && (year%100 !== 0 || year%400 === 0);
-    };
+  var isLeapYear = (year) => year%4 === 0 && (year%100 !== 0 || year%400 === 0);
   
   var arraySum = (array, index) => {
       var sum = 0;
@@ -5195,6 +5310,7 @@ function dbg(text) {
         tm_gmtoff: HEAP32[(((tm)+(36))>>2)],
         tm_zone: tm_zone ? UTF8ToString(tm_zone) : ''
       };
+      
   
       var pattern = UTF8ToString(format);
   
@@ -5430,6 +5546,9 @@ function dbg(text) {
     };
 
   
+  var runtimeKeepaliveCounter = 0;
+  var keepRuntimeAlive = () => noExitRuntime || runtimeKeepaliveCounter > 0;
+  
   var _proc_exit = (code) => {
       EXITSTATUS = code;
       if (!keepRuntimeAlive()) {
@@ -5438,6 +5557,7 @@ function dbg(text) {
       }
       quit_(code, new ExitStatus(code));
     };
+  
   /** @param {boolean|number=} implicit */
   var exitJS = (status, implicit) => {
       EXITSTATUS = status;
@@ -5524,153 +5644,51 @@ UnboundTypeError = Module['UnboundTypeError'] = extendError(Error, 'UnboundTypeE
   FS.FSNode = FSNode;
   FS.createPreloadedFile = FS_createPreloadedFile;
   FS.staticInit();;
-ERRNO_CODES = {
-      'EPERM': 63,
-      'ENOENT': 44,
-      'ESRCH': 71,
-      'EINTR': 27,
-      'EIO': 29,
-      'ENXIO': 60,
-      'E2BIG': 1,
-      'ENOEXEC': 45,
-      'EBADF': 8,
-      'ECHILD': 12,
-      'EAGAIN': 6,
-      'EWOULDBLOCK': 6,
-      'ENOMEM': 48,
-      'EACCES': 2,
-      'EFAULT': 21,
-      'ENOTBLK': 105,
-      'EBUSY': 10,
-      'EEXIST': 20,
-      'EXDEV': 75,
-      'ENODEV': 43,
-      'ENOTDIR': 54,
-      'EISDIR': 31,
-      'EINVAL': 28,
-      'ENFILE': 41,
-      'EMFILE': 33,
-      'ENOTTY': 59,
-      'ETXTBSY': 74,
-      'EFBIG': 22,
-      'ENOSPC': 51,
-      'ESPIPE': 70,
-      'EROFS': 69,
-      'EMLINK': 34,
-      'EPIPE': 64,
-      'EDOM': 18,
-      'ERANGE': 68,
-      'ENOMSG': 49,
-      'EIDRM': 24,
-      'ECHRNG': 106,
-      'EL2NSYNC': 156,
-      'EL3HLT': 107,
-      'EL3RST': 108,
-      'ELNRNG': 109,
-      'EUNATCH': 110,
-      'ENOCSI': 111,
-      'EL2HLT': 112,
-      'EDEADLK': 16,
-      'ENOLCK': 46,
-      'EBADE': 113,
-      'EBADR': 114,
-      'EXFULL': 115,
-      'ENOANO': 104,
-      'EBADRQC': 103,
-      'EBADSLT': 102,
-      'EDEADLOCK': 16,
-      'EBFONT': 101,
-      'ENOSTR': 100,
-      'ENODATA': 116,
-      'ETIME': 117,
-      'ENOSR': 118,
-      'ENONET': 119,
-      'ENOPKG': 120,
-      'EREMOTE': 121,
-      'ENOLINK': 47,
-      'EADV': 122,
-      'ESRMNT': 123,
-      'ECOMM': 124,
-      'EPROTO': 65,
-      'EMULTIHOP': 36,
-      'EDOTDOT': 125,
-      'EBADMSG': 9,
-      'ENOTUNIQ': 126,
-      'EBADFD': 127,
-      'EREMCHG': 128,
-      'ELIBACC': 129,
-      'ELIBBAD': 130,
-      'ELIBSCN': 131,
-      'ELIBMAX': 132,
-      'ELIBEXEC': 133,
-      'ENOSYS': 52,
-      'ENOTEMPTY': 55,
-      'ENAMETOOLONG': 37,
-      'ELOOP': 32,
-      'EOPNOTSUPP': 138,
-      'EPFNOSUPPORT': 139,
-      'ECONNRESET': 15,
-      'ENOBUFS': 42,
-      'EAFNOSUPPORT': 5,
-      'EPROTOTYPE': 67,
-      'ENOTSOCK': 57,
-      'ENOPROTOOPT': 50,
-      'ESHUTDOWN': 140,
-      'ECONNREFUSED': 14,
-      'EADDRINUSE': 3,
-      'ECONNABORTED': 13,
-      'ENETUNREACH': 40,
-      'ENETDOWN': 38,
-      'ETIMEDOUT': 73,
-      'EHOSTDOWN': 142,
-      'EHOSTUNREACH': 23,
-      'EINPROGRESS': 26,
-      'EALREADY': 7,
-      'EDESTADDRREQ': 17,
-      'EMSGSIZE': 35,
-      'EPROTONOSUPPORT': 66,
-      'ESOCKTNOSUPPORT': 137,
-      'EADDRNOTAVAIL': 4,
-      'ENETRESET': 39,
-      'EISCONN': 30,
-      'ENOTCONN': 53,
-      'ETOOMANYREFS': 141,
-      'EUSERS': 136,
-      'EDQUOT': 19,
-      'ESTALE': 72,
-      'ENOTSUP': 138,
-      'ENOMEDIUM': 148,
-      'EILSEQ': 25,
-      'EOVERFLOW': 61,
-      'ECANCELED': 11,
-      'ENOTRECOVERABLE': 56,
-      'EOWNERDEAD': 62,
-      'ESTRPIPE': 135,
-    };;
 function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
 }
 var wasmImports = {
+  /** @export */
   __cxa_throw: ___cxa_throw,
+  /** @export */
   _embind_register_bigint: __embind_register_bigint,
+  /** @export */
   _embind_register_bool: __embind_register_bool,
+  /** @export */
   _embind_register_emval: __embind_register_emval,
+  /** @export */
   _embind_register_float: __embind_register_float,
+  /** @export */
   _embind_register_function: __embind_register_function,
+  /** @export */
   _embind_register_integer: __embind_register_integer,
+  /** @export */
   _embind_register_memory_view: __embind_register_memory_view,
+  /** @export */
   _embind_register_std_string: __embind_register_std_string,
+  /** @export */
   _embind_register_std_wstring: __embind_register_std_wstring,
+  /** @export */
   _embind_register_void: __embind_register_void,
+  /** @export */
   abort: _abort,
-  emscripten_memcpy_big: _emscripten_memcpy_big,
+  /** @export */
+  emscripten_memcpy_js: _emscripten_memcpy_js,
+  /** @export */
   emscripten_resize_heap: _emscripten_resize_heap,
+  /** @export */
   environ_get: _environ_get,
+  /** @export */
   environ_sizes_get: _environ_sizes_get,
+  /** @export */
   fd_close: _fd_close,
+  /** @export */
   fd_read: _fd_read,
+  /** @export */
   fd_seek: _fd_seek,
+  /** @export */
   fd_write: _fd_write,
+  /** @export */
   strftime_l: _strftime_l
 };
 var wasmExports = createWasm();
@@ -5678,7 +5696,6 @@ var ___wasm_call_ctors = createExportWrapper('__wasm_call_ctors');
 var _malloc = Module['_malloc'] = createExportWrapper('malloc');
 var _main = createExportWrapper('main');
 var ___getTypeName = createExportWrapper('__getTypeName');
-var __embind_initialize_bindings = Module['__embind_initialize_bindings'] = createExportWrapper('_embind_initialize_bindings');
 var ___errno_location = createExportWrapper('__errno_location');
 var _fflush = Module['_fflush'] = createExportWrapper('fflush');
 var _free = createExportWrapper('free');
@@ -5733,7 +5750,6 @@ var missingLibrarySymbols = [
   'runtimeKeepalivePop',
   'callUserCallback',
   'maybeExit',
-  'safeSetTimeout',
   'asmjsMangle',
   'getNativeTypeSize',
   'STACK_SIZE',
@@ -5809,6 +5825,7 @@ var missingLibrarySymbols = [
   'wasiRightsToMuslOFlags',
   'wasiOFlagsToMuslOFlags',
   'createDyncallWrapper',
+  'safeSetTimeout',
   'setImmediateWrapped',
   'clearImmediateWrapped',
   'polyfillSetImmediate',
@@ -5820,6 +5837,8 @@ var missingLibrarySymbols = [
   'setMainLoop',
   'getSocketFromFD',
   'getSocketAddress',
+  'FS_unlink',
+  'FS_mkdirTree',
   '_setNetworkCallback',
   'heapObjectForWebGLType',
   'heapAccessShiftForWebGLHeap',
@@ -5844,12 +5863,12 @@ var missingLibrarySymbols = [
   'SDL_unicode',
   'SDL_ttfContext',
   'SDL_audio',
-  'GLFW_Window',
   'ALLOC_NORMAL',
   'ALLOC_STACK',
   'allocate',
   'writeStringToMemory',
   'writeAsciiToMemory',
+  'getFunctionArgsName',
   'requireRegisteredType',
   'init_embind',
   'getBasestPointer',
@@ -5864,9 +5883,6 @@ var missingLibrarySymbols = [
   'nonConstNoSmartPtrRawPointerToWireType',
   'init_RegisteredPointer',
   'RegisteredPointer',
-  'RegisteredPointer_getPointee',
-  'RegisteredPointer_destructor',
-  'RegisteredPointer_deleteObject',
   'RegisteredPointer_fromWireType',
   'runDestructor',
   'releaseClassHandle',
@@ -5875,12 +5891,7 @@ var missingLibrarySymbols = [
   'makeClassHandle',
   'init_ClassHandle',
   'ClassHandle',
-  'ClassHandle_isAliasOf',
   'throwInstanceAlreadyDeleted',
-  'ClassHandle_clone',
-  'ClassHandle_delete',
-  'ClassHandle_isDeleted',
-  'ClassHandle_deleteLater',
   'flushPendingDeletes',
   'setDelayFunction',
   'RegisteredClass',
@@ -5888,11 +5899,13 @@ var missingLibrarySymbols = [
   'downcastPointer',
   'upcastPointer',
   'validateThis',
+  'char_0',
+  'char_9',
+  'makeLegalFunctionName',
   'getStringOrSymbol',
-  'craftEmvalAllocator',
   'emval_get_global',
+  'emval_returnValue',
   'emval_lookupTypes',
-  'emval_allocateDestructors',
   'emval_addMethodCaller',
 ];
 missingLibrarySymbols.forEach(missingLibrarySymbol)
@@ -5908,19 +5921,15 @@ var unexportedSymbols = [
   'removeRunDependency',
   'FS_createFolder',
   'FS_createPath',
-  'FS_createDataFile',
   'FS_createLazyFile',
   'FS_createLink',
   'FS_createDevice',
   'FS_readFile',
-  'FS_unlink',
   'out',
   'err',
   'callMain',
   'abort',
-  'keepRuntimeAlive',
   'wasmMemory',
-  'wasmTable',
   'wasmExports',
   'stackAlloc',
   'stackSave',
@@ -5959,11 +5968,14 @@ var unexportedSymbols = [
   'getDynCaller',
   'dynCall',
   'handleException',
+  'keepRuntimeAlive',
   'asyncLoad',
   'alignMemory',
   'mmapAlloc',
   'handleAllocatorInit',
   'HandleAllocator',
+  'wasmTable',
+  'noExitRuntime',
   'freeTableIndexes',
   'functionsInTableMap',
   'setValue',
@@ -6011,6 +6023,7 @@ var unexportedSymbols = [
   'FS_stdin_getChar_buffer',
   'FS_stdin_getChar',
   'FS',
+  'FS_createDataFile',
   'MEMFS',
   'TTY',
   'PIPEFS',
@@ -6027,7 +6040,6 @@ var unexportedSymbols = [
   'IDBStore',
   'SDL',
   'SDL_gfx',
-  'GLFW',
   'allocateUTF8',
   'allocateUTF8OnStack',
   'InternalError',
@@ -6045,6 +6057,7 @@ var unexportedSymbols = [
   'embind_init_charCodes',
   'readLatin1String',
   'getTypeName',
+  'getFunctionName',
   'heap32VectorToArray',
   'UnboundTypeError',
   'PureVirtualError',
@@ -6071,17 +6084,13 @@ var unexportedSymbols = [
   'detachFinalizer_deps',
   'deletionQueue',
   'delayFunction',
-  'char_0',
-  'char_9',
-  'makeLegalFunctionName',
   'emval_handles',
   'emval_symbols',
   'init_emval',
   'count_emval_handles',
   'Emval',
-  'emval_newers',
   'emval_methodCallers',
-  'emval_registeredMethods',
+  'reflectConstruct',
 ];
 unexportedSymbols.forEach(unexportedRuntimeSymbol);
 
