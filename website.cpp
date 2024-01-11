@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <emscripten/emscripten.h>
-#include "extern/vecs2pauli/include/vecs2pauli.hpp"
+#include "_extern/vecs2pauli/include/vecs2pauli.hpp"
 #include <emscripten/bind.h>
 
 using namespace emscripten;

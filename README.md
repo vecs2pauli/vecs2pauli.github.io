@@ -12,7 +12,7 @@ The online solver is a WebAssembly file, which we compile using [Emscripten](htt
 To do so, run in the main folder:
 
 ```
-emcc -lembind -o website.js website.cpp -I extern/vecs2pauli/include extern/vecs2pauli/src/vecs2pauli.cpp -s "EXPORTED_FUNCTIONS=['_malloc']"
+emcc -lembind -o website.js website.cpp -I _extern/vecs2pauli/include _extern/vecs2pauli/src/vecs2pauli.cpp -s "EXPORTED_FUNCTIONS=['_malloc']"
 ```
 
 Then, to check if the website works:
