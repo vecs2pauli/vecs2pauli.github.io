@@ -7,6 +7,9 @@
 	h1 {
 	  text-align: center;
 	}
+	.center {
+	  text-align: center;
+	}
             body {
               font-family: arial;
 	      font-size: 12pt;
@@ -14,6 +17,14 @@
               padding: none;
 	      max-width: 100ch;
             }
+
+	    img {
+	      max-width: 80%;
+	      margin-left: auto;
+	      margin-right: auto;
+	      display: block;
+            }
+   
       
             .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
             div.emscripten { text-align: center; }      
@@ -126,7 +137,14 @@
         </nav>
 
 <h1>Vecs2Pauli</h1>
-<h2>Software for converting between quantum-state vectors and the (Pauli) stabilizer formalism </h2>	
+<h2 class="center">Software for converting between quantum-state vectors and the (Pauli) stabilizer formalism </h2>	
+
+
+<br>
+<img src="pics/vecs2pauli.svg">
+<br>
+<br>
+
  
 <b>Vecs2Pauli</b> is Python/C++ software which finds all Pauli stabilizers of a given quantum state, where the quantum state is given as a vector. More generally, it finds all local-Pauli transformations (strings of specific <MATH>2&#xd7;2</MATH> matrices) which map one given quantum state to another.
 <br>
@@ -140,6 +158,19 @@ Vecs2Pauli is currently in its final stage of development as a Python/C++ librar
 	</li>
 </ul>
 
+<head>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body>
+  <pre><code class="python">bell_state = [1, 0, 0, 1]  # |00> + |11>
+
+print(vecs2pauli.get_stabilizers(bell_state))
+# prints ["+XX", "+ZZ"]
+</code></pre>
+</body>
 
 
 <div class="title">
@@ -162,10 +193,16 @@ Vecs2Pauli is currently in its final stage of development as a Python/C++ librar
 </ul>
 
 
+<br>
+<img src="pics/qubits-yellow-blue.svg">
+<br>
+
+
 
 <div class="title">
   <h2>When is Vecs2Pauli useful?</h2>
 </div>
+
 
 <ul>
 	<li> <b>fast classical simulation of quantum circuits</b>: converting from the slow vector-based simulation to the fast stabilizer-based simulation, if possible</li>
@@ -189,9 +226,14 @@ Vecs2Pauli is currently in its final stage of development as a Python/C++ librar
 	</li>
 </ul>
 
+<br>
+<img src="pics/qubits-green-pink.svg">
+<br>
+
 <div class="title">
   <h2>High-level explanation</h2>
 </div>
+
 
 A quantum bit or <a href="https://en.wikipedia.org/wiki/Qubit">qubit</a> is the unit of computation of a <a href="https://en.wikipedia.org/wiki/Quantum_computer">quantum computer</a>.
 The state of a set of quantum bits is represented by a vector (a list) of <a href="https://en.wikipedia.org/wiki/Complex_numbers">complex numbers</a>.
