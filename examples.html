@@ -123,11 +123,80 @@
         </nav>
 
         <div style="text-align: center;">
-            <h2>[More examples to be added soon. For now, more examples can be found <a href=https://github.com/vecs2pauli/vecs2pauli/tree/main/examples>here</a> and <a href=https://github.com/vecs2pauli/vecs2pauli#examples>here</a>]</h2>
+            <h2>[More examples, such as decomposing a vector in a stabiliser basis, to be added soon. For now, also see <a href=https://github.com/vecs2pauli/vecs2pauli#examples>example files accompanying the source code</a>]</h2>
         </div>
 
+
+<hr>
 <div class="title">
-  <h2>Example from quantum error correction</h2>
+  <h2>Finding a vector's stabilisers</h2>
+</div>
+
+<head>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body>
+  <pre><code class="python">import vecs2pauli as vtp
+myvector = [1, 0, 0, 0, 0, 0, 0, -1j]  # the |000> - i|11> state
+print(vtp.get_stabilizers(myvector))
+# prints ["+ZZI", "-XYX", "+IZZ"]
+</code></pre>
+</body>
+
+Indeed, one can compute by hand (or using NumPy) that each of the three matrices <MATH> Z &#8855; Z &#8855; I</MATH>, <MATH> -X &#8855; Y &#8855; X</MATH> and <MATH> I &#8855; Z &#8855; Z</MATH>, or any product of the three, maps the vector <MATH> (1, 0, 0, 0, 0, 0, 0, -i)</MATH> to itself under matrix-vector multiplication.
+In fact, these 3 matrices and their products (2<sup>3</sup>=8 matrices in total) are all tensor product of Pauli matrices (Pauli strings) doing so.
+That is, these 3 matrices generate the stabilizer group of the vector.
+<br>
+<br>
+
+An alternative is to verify that this stabilizer group indeed has a single vector that is stabilized (ignoring any global scalar):
+
+
+<head>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body>
+  <pre><code class="python">print(vtp.find_basis_for_stabilised_subspace(["+ZZI", "-XYX", "+IZZ"]))
+# prints [array([0.70710678+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.+0.j, 0.-0.70710678j])]
+# that is, [1, 0, 0, 0, 0, 0, 0, 0, -i] multiplied by 0.70710678 for normalization
+</code></pre>
+</body>
+So the code finds precisely the vector we inputted.
+
+<hr>
+<div class="title">
+  <h2>Finding if one vector can be constructed from another using single-qubit Pauli operations</h2>
+</div>
+
+Vecs2Pauli can also be used for finding all single-qubit Pauli operations between two vectors:
+
+<head>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body>
+  <pre><code class="python">import vecs2pauli as vtp
+source = [1, 0, 0, 1]  # the |00> + |11> state
+target = [0, -1j, -1j, 0]  # the |01> + |10> state, multiplied by a global factor -i
+
+print(vtp.get_local_pauli_transformations(source, target))
+# prints ((1-0j), '-iIX', ['ZZ', 'XX'])
+</code></pre>
+</body>
+
+The printed result implies that all single-qubit Pauli transformations from the source vector to the target vector can be written as <MATH>-i &#183; (I&#8855;X) &#183; g</MATH> where g is a product of a subset of <MATH>{Z &#8855; Z, X &#8855; X}</MATH>; that is, g is one of <MATH>I &#8855; I, X &#8855; X, Z &#8855; Z</MATH> or <MATH>-Y &#8855; Y</MATH>.
+
+<hr>
+<div class="title">
+  <h2>Example from quantum error correction: from the codespace's basis vectors to its stabilisers and back</h2>
 </div>
 
 
@@ -151,11 +220,11 @@ logical_zero = [1, 0, 0, 0, 0, 0, 0, 0]  # |000>
 logical_one = [0, 0, 0, 0, 0, 0, 0, 1]  # |111>
 
 # finding the stabilizers of the code
-stabilizer_group_zero = vtp.get_stabilizers(logical_zero)  # {ZII, IZI, IIZ}
-stabilizer_group_one = vtp.get_stabilizers(logical_zero)  # {-ZII, -IZI, -IIZ}
+stabilizer_group_zero = vtp.get_stabilizers(logical_zero)  # ["+ZZZ", "+IZI", "+IIZ"]
+stabilizer_group_one = vtp.get_stabilizers(logical_one)  # ["-ZZZ", "+IZI", "-IIZ"]
 
 print(vtp.intersect_stabilizer_groups(stabilizer_group_zero, stabilizer_group_one))
-# prints {ZZI, IZZ}
+# prints ["+ZZI", "+IZZ"]
 </code></pre>
 </body>
 
@@ -169,7 +238,7 @@ Conversely, given the stabiliser description of the code, find a set of (orthogo
 <body>
   <pre><code class="python">import vecs2pauli as vtp
 
-stabilizer_group = [ZZI, IZZ]
+stabilizer_group = ["+ZZI", "+IZZ"]
 
 print(vtp.find_basis_for_stabilised_subspace(stabilizer_group))
 # prints a list containing [1, 0, 0, 0, 0, 0, 0, 0] and [0, 0, 0, 0, 0, 0, 0, 1],
@@ -183,7 +252,7 @@ print(vtp.find_basis_for_stabilised_subspace(stabilizer_group))
 
 
 <div class="title">
-  <h2>Explanation of the example above</h2>
+  <h2>Explanation of the quantum error-correction example above</h2>
 </div>
 In jargon, we say that the 3-qubit repetition code encodes a single <i>logical</i> qubit by using three <i>physical</i> qubits.
 By doing so, it becomes possible to detect and correct for a specific type of error on the single qubit which would not have been possible when one uses a single qubit directly.

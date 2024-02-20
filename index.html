@@ -146,7 +146,7 @@
 <br>
 
  
-<b>Vecs2Pauli</b> is Python/C++ software which finds all Pauli stabilizers of a given quantum state, where the quantum state is given as a vector. More generally, it finds all local-Pauli transformations (strings of specific <MATH>2&#xd7;2</MATH> matrices) which map one given quantum state to another.
+<b>Vecs2Pauli</b> is Python/C++ software which finds all Pauli stabilizers of a given quantum state, where the quantum state is given as a vector. More generally, it finds all local-Pauli transformations (strings of specific <MATH>2&#xd7;2</MATH> matrices) which map one given quantum state to another. Vecs2Pauli's functionality also includes the conversion from the vector-based and stabilizer-based representations of quantum-error correcting codes.
 <br>
 <br>
 
@@ -154,9 +154,29 @@ Vecs2Pauli is currently in its final stage of development as a Python/C++ librar
 <ul>
 	<li> the <b><a href="calculator.html">online solver is already available</a></b> (no need to install anything!)
 	</li>
-	<li> the beta version of the <b>Python package is <a href="https://github.com/vecs2pauli/vecs2pauli">already available too </a></b>
+	<li> the beta version of the <b>Python package is <a href="https://pypi.org/project/vecs2pauli/"> installable through the pip package manager</a></b> (code is <a href="https://github.com/vecs2pauli/vecs2pauli">available here </a>)
 	</li>
 </ul>
+
+
+<div class="title">
+  <h2>Getting started in less than a minute</h2>
+</div>
+
+Install using the Pip package manager for Python packages:
+
+<head>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body>
+  <pre><code class="bash">pip install vecs2pauli
+</code></pre>
+</body>
+
+Use the following Python code to find the stabilizer group generators of the Bell state:
 
 <head>
   <link rel="stylesheet"
@@ -168,10 +188,11 @@ Vecs2Pauli is currently in its final stage of development as a Python/C++ librar
   <pre><code class="python">bell_state = [1, 0, 0, 1]  # |00> + |11>
 
 print(vecs2pauli.get_stabilizers(bell_state))
-# prints ["+XX", "+ZZ"]
+# prints ["+ZZ", "+XX"]
 </code></pre>
 </body>
 
+For more examples, see <a href="examples.html">here</a>.
 
 <div class="title">
   <h2>Key features</h2>
